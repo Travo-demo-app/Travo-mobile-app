@@ -14,7 +14,10 @@ class HomeScreenPage extends StatelessWidget {
             children: [
               // ===== HEADER =====
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -36,7 +39,10 @@ class HomeScreenPage extends StatelessWidget {
                       ),
                       style: TextButton.styleFrom(
                         backgroundColor: AppColors.surface,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(50),
                         ),
@@ -76,7 +82,10 @@ class HomeScreenPage extends StatelessWidget {
 
               // ===== GREETING =====
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -116,7 +125,10 @@ class HomeScreenPage extends StatelessWidget {
 
               // ===== SEARCH BAR =====
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -130,7 +142,9 @@ class HomeScreenPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0,
+                          ),
                         ),
                       ),
                     ),
@@ -242,10 +256,7 @@ class _DestinationCard extends StatelessWidget {
                     color: Colors.black26,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.bookmark,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.bookmark, color: Colors.white),
                 ),
               ),
             ],
@@ -296,7 +307,10 @@ class _DestinationCard extends StatelessWidget {
               ),
               Row(
                 children: [
-                  CircleAvatar(radius: 12, backgroundColor: AppColors.surfaceLight),
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: AppColors.surfaceLight,
+                  ),
                   CircleAvatar(radius: 12, backgroundColor: AppColors.border),
                   Container(
                     width: 24,
