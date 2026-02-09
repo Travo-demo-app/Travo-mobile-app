@@ -10,12 +10,15 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final TextEditingController _nameController =
-      TextEditingController(text: "Leonardo");
-  final TextEditingController _emailController =
-      TextEditingController(text: "leonardo@travo.app");
-  final TextEditingController _phoneController =
-      TextEditingController(text: "+1 (555) 000-0000");
+  final TextEditingController _nameController = TextEditingController(
+    text: "Leonardo",
+  );
+  final TextEditingController _emailController = TextEditingController(
+    text: "leonardo@travo.app",
+  );
+  final TextEditingController _phoneController = TextEditingController(
+    text: "+1 (555) 000-0000",
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +34,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         title: const Text(
           "Edit Profile",
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
           ),
@@ -41,26 +44,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
                 // Profile Avatar with Edit Button
                 Center(
                   child: Stack(
                     children: [
                       Container(
-                        width: 140,
-                        height: 140,
+                        width: 112,
+                        height: 112,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFFFF6B35),
-                              AppColors.primary,
-                            ],
+                            colors: [Color(0xFFFF6B35), AppColors.primary],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -73,7 +73,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           ),
                           child: const Icon(
                             Icons.person,
-                            size: 80,
+                            size: 64,
                             color: AppColors.textOnPrimary,
                           ),
                         ),
@@ -82,19 +82,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         bottom: 0,
                         right: 0,
                         child: Container(
-                          width: 40,
-                          height: 40,
+                          width: 32,
+                          height: 32,
                           decoration: BoxDecoration(
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: AppColors.background,
-                              width: 3,
+                              width: 2,
                             ),
                           ),
                           child: const Icon(
                             Icons.edit,
-                            size: 20,
+                            size: 16,
                             color: AppColors.textOnPrimary,
                           ),
                         ),
@@ -103,13 +103,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
 
                 // Full Name Field
                 Text(
                   "Full Name",
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -122,6 +122,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       Icons.person_outline,
                       color: AppColors.textSecondary,
                     ),
+                    isDense: true,
                     border: UnderlineInputBorder(
                       borderSide: BorderSide(color: AppColors.border),
                     ),
@@ -129,23 +130,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       borderSide: BorderSide(color: AppColors.border),
                     ),
                     focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: AppColors.textPrimary,
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
 
                 // Email Address Field
                 Text(
                   "Email Address",
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -158,6 +162,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       Icons.email_outlined,
                       color: AppColors.textSecondary,
                     ),
+                    isDense: true,
                     border: UnderlineInputBorder(
                       borderSide: BorderSide(color: AppColors.border),
                     ),
@@ -165,24 +170,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       borderSide: BorderSide(color: AppColors.border),
                     ),
                     focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: AppColors.textPrimary,
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
 
                 // Phone Number Field
                 Text(
                   "Phone Number",
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -195,6 +203,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       Icons.phone_outlined,
                       color: AppColors.textSecondary,
                     ),
+                    isDense: true,
                     border: UnderlineInputBorder(
                       borderSide: BorderSide(color: AppColors.border),
                     ),
@@ -202,23 +211,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       borderSide: BorderSide(color: AppColors.border),
                     ),
                     focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   keyboardType: TextInputType.phone,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: AppColors.textPrimary,
                   ),
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 28),
 
                 // Save Changes Button
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: 48,
                   child: ElevatedButton(
                     onPressed: () {
                       // Save changes and go back
@@ -234,14 +246,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     child: const Text(
                       "Save Changes",
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 80),
+                const SizedBox(height: 48),
               ],
             ),
           ),
