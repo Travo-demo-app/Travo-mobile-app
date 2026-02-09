@@ -12,7 +12,7 @@ class ProfilePage extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -37,22 +37,19 @@ class ProfilePage extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
 
                 // Profile Avatar with Edit Button
                 Center(
                   child: Stack(
                     children: [
                       Container(
-                        width: 140,
-                        height: 140,
+                        width: 112,
+                        height: 112,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFFFF6B35),
-                              AppColors.primary,
-                            ],
+                            colors: [Color(0xFFFF6B35), AppColors.primary],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -65,7 +62,7 @@ class ProfilePage extends StatelessWidget {
                           ),
                           child: const Icon(
                             Icons.person,
-                            size: 80,
+                            size: 64,
                             color: AppColors.textOnPrimary,
                           ),
                         ),
@@ -74,19 +71,19 @@ class ProfilePage extends StatelessWidget {
                         bottom: 0,
                         right: 0,
                         child: Container(
-                          width: 40,
-                          height: 40,
+                          width: 32,
+                          height: 32,
                           decoration: BoxDecoration(
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: AppColors.background,
-                              width: 3,
+                              width: 2,
                             ),
                           ),
                           child: const Icon(
                             Icons.edit,
-                            size: 20,
+                            size: 16,
                             color: AppColors.textOnPrimary,
                           ),
                         ),
@@ -95,14 +92,14 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 // Name
                 const Center(
                   child: Text(
                     "Leonardo",
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
@@ -116,13 +113,13 @@ class ProfilePage extends StatelessWidget {
                   child: Text(
                     "leonardo@travo.app",
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       color: AppColors.textSecondary,
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 // Edit Profile Button
                 Center(
@@ -133,10 +130,8 @@ class ProfilePage extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.textOnPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 48,
-                        vertical: 16,
-                      ),
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -144,35 +139,33 @@ class ProfilePage extends StatelessWidget {
                     child: const Text(
                       "Edit Profile",
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
 
                 // Stats Cards
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: const [
-                    _StatCard(
-                      value: "12",
-                      label: "Trips",
+                    Expanded(
+                      child: _StatCard(value: "12", label: "Trips"),
                     ),
-                    _StatCard(
-                      value: "245",
-                      label: "Photos",
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _StatCard(value: "245", label: "Photos"),
                     ),
-                    _StatCard(
-                      value: "4.9",
-                      label: "Rating",
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: _StatCard(value: "4.9", label: "Rating"),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
 
                 // Menu Items
                 _MenuItem(
@@ -184,18 +177,20 @@ class ProfilePage extends StatelessWidget {
                   onTap: () {},
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 _MenuItem(
                   icon: Icons.flight_takeoff,
                   title: "Trip History",
                   subtitle: "Past adventures",
                   iconColor: const Color(0xFFFF6B35),
-                  iconBackground: const Color(0xFFFF6B35).withValues(alpha: 0.1),
+                  iconBackground: const Color(
+                    0xFFFF6B35,
+                  ).withValues(alpha: 0.1),
                   onTap: () {},
                 ),
 
-                const SizedBox(height: 80),
+                const SizedBox(height: 48),
               ],
             ),
           ),
@@ -211,16 +206,12 @@ class _StatCard extends StatelessWidget {
   final String value;
   final String label;
 
-  const _StatCard({
-    required this.value,
-    required this.label,
-  });
+  const _StatCard({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -237,7 +228,7 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              fontSize: 32,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: AppColors.primary,
             ),
@@ -245,10 +236,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -280,7 +268,7 @@ class _MenuItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
@@ -296,19 +284,15 @@ class _MenuItem extends StatelessWidget {
           children: [
             // Icon
             Container(
-              width: 56,
-              height: 56,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: iconBackground,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 28,
-              ),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
 
             // Text
             Expanded(
@@ -318,7 +302,7 @@ class _MenuItem extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
@@ -327,7 +311,7 @@ class _MenuItem extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -336,11 +320,7 @@ class _MenuItem extends StatelessWidget {
             ),
 
             // Arrow
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
-              size: 24,
-            ),
+            Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 22),
           ],
         ),
       ),
