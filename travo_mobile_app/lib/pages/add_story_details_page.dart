@@ -59,7 +59,7 @@ class _AddStoryDetailsPageState extends State<AddStoryDetailsPage> {
               icon: Icons.photo_library,
               label: "Pick from Gallery",
               onTap: () {
-                // TODO: Implement image picker from gallery
+                _showNotImplementedNotice("Gallery picker");
               },
             ),
             const SizedBox(height: 12),
@@ -69,7 +69,7 @@ class _AddStoryDetailsPageState extends State<AddStoryDetailsPage> {
               icon: Icons.camera_alt,
               label: "Take Photo",
               onTap: () {
-                // TODO: Implement camera
+                _showNotImplementedNotice("Camera capture");
               },
             ),
 
@@ -205,6 +205,15 @@ class _AddStoryDetailsPageState extends State<AddStoryDetailsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showNotImplementedNotice(String featureName) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("$featureName is coming soon."),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }

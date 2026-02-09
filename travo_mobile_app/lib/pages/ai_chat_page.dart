@@ -339,7 +339,6 @@ class _AiChatPageState extends State<AiChatPage> {
       mainAxisSize: MainAxisSize.min,
       children: destinations.asMap().entries.map((entry) {
         final index = entry.key;
-        final label = entry.value;
         final isActive = index == destinations.length - 1;
 
         return Padding(
@@ -484,6 +483,7 @@ class _AiChatPageState extends State<AiChatPage> {
         );
       },
     ).then((_) {
+      if (!mounted) return;
       // Ensure keyboard stays hidden after popup closes
       FocusScope.of(context).unfocus();
     });
