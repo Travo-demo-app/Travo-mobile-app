@@ -4,10 +4,7 @@ import '../core/constants/app_colors.dart';
 class AddStoryDetailsPage extends StatefulWidget {
   final String destinationName;
 
-  const AddStoryDetailsPage({
-    super.key,
-    this.destinationName = "Destination",
-  });
+  const AddStoryDetailsPage({super.key, this.destinationName = "Destination"});
 
   @override
   State<AddStoryDetailsPage> createState() => _AddStoryDetailsPageState();
@@ -92,10 +89,7 @@ class _AddStoryDetailsPageState extends State<AddStoryDetailsPage> {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.divider,
-                  width: 1,
-                ),
+                border: Border.all(color: AppColors.divider, width: 1),
               ),
               child: TextField(
                 controller: _storyController,
@@ -154,10 +148,7 @@ class _AddStoryDetailsPageState extends State<AddStoryDetailsPage> {
               },
               child: const Text(
                 "Save to Story",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -188,11 +179,7 @@ class _AddStoryDetailsPageState extends State<AddStoryDetailsPage> {
                 color: AppColors.primary,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: AppColors.textOnPrimary,
-                size: 24,
-              ),
+              child: Icon(icon, color: AppColors.textOnPrimary, size: 24),
             ),
             const SizedBox(width: 16),
             Text(

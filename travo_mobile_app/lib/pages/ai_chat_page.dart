@@ -136,10 +136,7 @@ class _AiChatPageState extends State<AiChatPage> {
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const Icon(
-                          Icons.mic,
-                          color: AppColors.primary,
-                        ),
+                        icon: const Icon(Icons.mic, color: AppColors.primary),
                         onPressed: () {},
                       ),
                     ),
@@ -155,9 +152,7 @@ class _AiChatPageState extends State<AiChatPage> {
                           controller: _messageController,
                           decoration: const InputDecoration(
                             hintText: "Ask anything...",
-                            hintStyle: TextStyle(
-                              color: AppColors.textDisabled,
-                            ),
+                            hintStyle: TextStyle(color: AppColors.textDisabled),
                             border: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
@@ -205,7 +200,9 @@ class _AiChatPageState extends State<AiChatPage> {
       padding: EdgeInsets.only(
         bottom: 16,
         left: message.isUser ? 40 : 0, // Add left padding for user messages
-        right: message.isUser ? 0 : 80, // Add right padding only for AI messages
+        right: message.isUser
+            ? 0
+            : 80, // Add right padding only for AI messages
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,7 +373,7 @@ class _AiChatPageState extends State<AiChatPage> {
   void _showDestinationDetails(List<String> destinations, int selectedIndex) {
     // Unfocus any focused widget to prevent keyboard from appearing
     FocusScope.of(context).unfocus();
-    
+
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -391,92 +388,100 @@ class _AiChatPageState extends State<AiChatPage> {
           child: Align(
             alignment: Alignment.centerRight,
             child: Padding(
-            padding: EdgeInsets.only(
-              right: 28,
-              top: MediaQuery.of(context).size.height * 0.28,
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOut,
-                )),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadow,
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: destinations.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final destination = entry.value;
-                      final isSelected = index == selectedIndex;
-                      
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, '/adventure');
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected 
-                                ? AppColors.primary 
-                                : Colors.transparent,
-                            borderRadius: index == 0 && index == destinations.length - 1
-                                ? BorderRadius.circular(16)
-                                : index == 0
-                                    ? const BorderRadius.vertical(top: Radius.circular(16))
-                                    : index == destinations.length - 1
-                                        ? const BorderRadius.vertical(bottom: Radius.circular(16))
-                                        : BorderRadius.zero,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                destination,
-                                style: TextStyle(
-                                  color: isSelected 
-                                      ? AppColors.textOnPrimary 
-                                      : AppColors.textPrimary,
-                                  fontSize: 14,
-                                  fontWeight: isSelected 
-                                      ? FontWeight.w700 
-                                      : FontWeight.w600,
-                                ),
-                              ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 8),
-                                const Icon(
-                                  Icons.arrow_forward_ios,
-                                  color: AppColors.textOnPrimary,
-                                  size: 12,
-                                ),
-                              ],
-                            ],
-                          ),
+              padding: EdgeInsets.only(
+                right: 28,
+                top: MediaQuery.of(context).size.height * 0.28,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: SlideTransition(
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(1, 0),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOut,
                         ),
-                      );
-                    }).toList(),
+                      ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.shadow,
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: destinations.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final destination = entry.value;
+                        final isSelected = index == selectedIndex;
+
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.pushNamed(context, '/adventure');
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              borderRadius:
+                                  index == 0 && index == destinations.length - 1
+                                  ? BorderRadius.circular(16)
+                                  : index == 0
+                                  ? const BorderRadius.vertical(
+                                      top: Radius.circular(16),
+                                    )
+                                  : index == destinations.length - 1
+                                  ? const BorderRadius.vertical(
+                                      bottom: Radius.circular(16),
+                                    )
+                                  : BorderRadius.zero,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  destination,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? AppColors.textOnPrimary
+                                        : AppColors.textPrimary,
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                                if (isSelected) ...[
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: AppColors.textOnPrimary,
+                                    size: 12,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
-              ),
               ),
             ),
           ),
