@@ -234,7 +234,7 @@ class _MapPageState extends State<MapPage> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 40, // Leave space for bottom nav
+              bottom: 80, // Leave space for bottom nav
               child: _PlaceDetailsBottomSheet(
                 onClose: () {
                   setState(() {
@@ -313,7 +313,7 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
         children: [
           // Drag Handle
           Container(
-            margin: const EdgeInsets.only(top: 8, bottom: 4),
+            margin: const EdgeInsets.only(top: 12),
             width: 40,
             height: 4,
             decoration: BoxDecoration(
@@ -323,7 +323,7 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
           ),
 
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -335,22 +335,64 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Recommended Badge and Rating
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceLight,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'RECOMMENDED',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.star,
+                                color: Color(0xFFFFC107),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '4.9',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Place Name
                           Text(
-                            'Mirissa',
+                            'Louvre Museum',
                             style: TextStyle(
                               color: AppColors.textPrimary,
-                              fontSize: 20,
+                              fontSize: 24,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
 
                           // Address
                           Text(
-                            'Galle Road, Sri Lanka',
+                            'Musée du Louvre, 75001 Paris, France',
                             style: TextStyle(
                               color: AppColors.textSecondary,
-                              fontSize: 13,
+                              fontSize: 14,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -360,8 +402,8 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
 
                     // Place Image
                     Container(
-                      width: 70,
-                      height: 70,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
                         color: AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(12),
@@ -376,7 +418,7 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 20),
 
                 // Duration and Distance
                 Row(
@@ -398,19 +440,19 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                                 'DURATION',
                                 style: TextStyle(
                                   color: AppColors.textDisabled,
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.5,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Text(
                             '12 mins',
                             style: TextStyle(
                               color: AppColors.textPrimary,
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -435,19 +477,19 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                                 'DISTANCE',
                                 style: TextStyle(
                                   color: AppColors.textDisabled,
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.5,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Text(
                             '3.4 miles',
                             style: TextStyle(
                               color: AppColors.textPrimary,
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -457,7 +499,7 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 24),
 
                 // Action Buttons
                 Row(
@@ -477,14 +519,14 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                         label: const Text(
                           'Start Navigation',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: const Color(0xFF006064),
                           foregroundColor: AppColors.textOnPrimary,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -509,14 +551,14 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                           'Save',
                           style: TextStyle(
                             color: AppColors.textPrimary,
-                            fontSize: 14,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: AppColors.surfaceLight,
                           side: BorderSide.none,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
