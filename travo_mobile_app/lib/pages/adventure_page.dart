@@ -12,7 +12,7 @@ class TravoAdventurePage extends StatelessWidget {
         child: Column(
           children: [
             _buildHeader(context),
-            Expanded(child: _buildTimeline()),
+            Expanded(child: _buildTimeline(context)),
           ],
         ),
       ),
@@ -70,13 +70,14 @@ class TravoAdventurePage extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeline() {
+  Widget _buildTimeline(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _buildSectionHeader(),
         const SizedBox(height: 16),
         _buildTimelineItem(
+          context: context,
           index: '1',
           title: 'Colombo Arrival',
           subtitle: 'Oct 12 - Oct 15 • 3 Nights',
@@ -90,6 +91,7 @@ class TravoAdventurePage extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _buildTimelineItem(
+          context: context,
           index: '2',
           title: 'Galle',
           subtitle: 'Oct 15 - Oct 19 • 4 Nights',
@@ -104,6 +106,7 @@ class TravoAdventurePage extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _buildTimelineItem(
+          context: context,
           index: '3',
           title: 'Yala Park',
           subtitle: 'Oct 19 - Oct 22 • 3 Nights',
@@ -150,6 +153,7 @@ class TravoAdventurePage extends StatelessWidget {
   }
 
   Widget _buildTimelineItem({
+    required BuildContext context,
     required String index,
     required String title,
     required String subtitle,
@@ -161,165 +165,174 @@ class TravoAdventurePage extends StatelessWidget {
     required String mapImage,
     required IconData mapTagIcon,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(context, '/place-details'),
+        borderRadius: BorderRadius.circular(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: index == '1'
-                  ? AppColors.primary
-                  : AppColors.surface,
-              foregroundColor: index == '1'
-                  ? AppColors.textOnPrimary
-                  : AppColors.primary,
-              child: Text(
-                index,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+            Column(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: index == '1'
+                      ? AppColors.primary
+                      : AppColors.surface,
+                  foregroundColor: index == '1'
+                      ? AppColors.textOnPrimary
+                      : AppColors.primary,
+                  child: Text(
+                    index,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Container(width: 2, height: 80, color: AppColors.divider),
+              ],
             ),
-            const SizedBox(height: 16),
-            Container(width: 2, height: 80, color: AppColors.divider),
-          ],
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight10,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      tag.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.divider),
-                      ),
-                      child: Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'STAY',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: AppColors.textSecondary,
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            stay,
+                            subtitle,
                             style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                              fontSize: 10,
+                              color: AppColors.textSecondary,
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Icon(
-                                icon,
-                                size: 14,
-                                color: iconColor ?? AppColors.primary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                stayInfo,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: iconColor ?? AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
-                    ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight10,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          tag.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.divider),
-                      image: DecorationImage(
-                        image: NetworkImage(mapImage),
-                        fit: BoxFit.cover,
-                        opacity: 0.6,
-                      ),
-                    ),
-                    child: Center(
-                      child: CircleAvatar(
-                        radius: 14,
-                        backgroundColor: AppColors.surface.withValues(
-                          alpha: 0.7,
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.divider),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'STAY',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                stay,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Icon(
+                                    icon,
+                                    size: 14,
+                                    color: iconColor ?? AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    stayInfo,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: iconColor ?? AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Icon(
-                          mapTagIcon,
-                          size: 16,
-                          color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => Navigator.pushNamed(context, '/map'),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.divider),
+                            image: DecorationImage(
+                              image: NetworkImage(mapImage),
+                              fit: BoxFit.cover,
+                              opacity: 0.6,
+                            ),
+                          ),
+                          child: Center(
+                            child: CircleAvatar(
+                              radius: 14,
+                              backgroundColor: AppColors.surface.withValues(
+                                alpha: 0.7,
+                              ),
+                              child: Icon(
+                                mapTagIcon,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
-
-
 }

@@ -4,10 +4,7 @@ import '../constants/app_colors.dart';
 class SharedBottomNavBar extends StatelessWidget {
   final String activeRoute;
 
-  const SharedBottomNavBar({
-    super.key,
-    required this.activeRoute,
-  });
+  const SharedBottomNavBar({super.key, required this.activeRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -35,29 +32,29 @@ class SharedBottomNavBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _BottomNavItem(
-                  icon: Icons.home,
+                  icon: Icons.home_filled,
                   label: "Home",
                   active: activeRoute == '/home',
                   route: '/home',
                 ),
                 _BottomNavItem(
-                  icon: Icons.book,
-                  label: "Story",
-                  active: activeRoute == '/story',
-                  route: '/story',
+                  icon: Icons.route,
+                  label: "Plans",
+                  active: activeRoute == '/adventure',
+                  route: '/adventure',
                 ),
                 const SizedBox(width: 60), // space for center button
                 _BottomNavItem(
-                  icon: Icons.explore,
+                  icon: Icons.map,
                   label: "Map",
                   active: activeRoute == '/map',
                   route: '/map',
                 ),
                 _BottomNavItem(
-                  icon: Icons.person,
-                  label: "Profile",
-                  active: activeRoute == '/profile',
-                  route: '/profile',
+                  icon: Icons.auto_stories,
+                  label: "Stories",
+                  active: activeRoute == '/story',
+                  route: '/story',
                 ),
               ],
             ),
@@ -75,29 +72,45 @@ class SharedBottomNavBar extends StatelessWidget {
                     Navigator.pushNamed(context, '/ai-chat');
                   }
                 },
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: activeRoute == '/ai-chat'
-                        ? AppColors.accent
-                        : AppColors.primary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
                         color: activeRoute == '/ai-chat'
-                            ? AppColors.accentLight20
-                            : AppColors.primaryLight20,
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                            ? AppColors.accent
+                            : AppColors.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: activeRoute == '/ai-chat'
+                                ? AppColors.accentLight20
+                                : AppColors.primaryLight20,
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.auto_awesome,
-                    color: AppColors.textOnPrimary,
-                    size: 32,
-                  ),
+                      child: const Icon(
+                        Icons.support_agent,
+                        color: AppColors.textOnPrimary,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Assistant',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: activeRoute == '/ai-chat'
+                            ? AppColors.primary
+                            : AppColors.textDisabled,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

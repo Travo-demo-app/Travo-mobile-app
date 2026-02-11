@@ -9,9 +9,22 @@ class AiChatPage extends StatefulWidget {
   State<AiChatPage> createState() => _AiChatPageState();
 }
 
-class _AiChatPageState extends State<AiChatPage> {
+class _AiChatPageState extends State<AiChatPage>
+    with SingleTickerProviderStateMixin {
+  static const Duration _scrollAnimationDuration = Duration(milliseconds: 300);
+  static const Map<String, String> _destinationSubtitles = {
+    'Mirissa': 'Whale watching',
+    'Galle': 'Historic Fort',
+    'Yala': 'Safari',
+  };
+
+  static const Map<String, String> _destinationRoutes = {'Yala': '/adventure'};
+
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late final AnimationController _locationGlowController;
+  late final Animation<double> _locationGlowAnimation;
+  bool _isDestinationSheetOpen = false;
   final List<ChatMessage> _messages = [
     ChatMessage(
       text:
@@ -40,6 +53,19 @@ class _AiChatPageState extends State<AiChatPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _locationGlowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+    _locationGlowAnimation = CurvedAnimation(
+      parent: _locationGlowController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final destinations = _latestDestinations();
 
@@ -48,24 +74,49 @@ class _AiChatPageState extends State<AiChatPage> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text(
-          "AI Assist",
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.accent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.smart_toy_rounded,
+                color: AppColors.textOnPrimary,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              "AI Assist",
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: AppColors.textPrimary),
-            onPressed: () {},
-          ),
-        ],
+        actions: const [],
       ),
       body: Stack(
         children: [
@@ -105,23 +156,74 @@ class _AiChatPageState extends State<AiChatPage> {
                   horizontal: 16,
                   vertical: 8,
                 ),
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/recommendations');
-                  },
-                  icon: const Icon(Icons.auto_awesome, size: 18),
-                  label: const Text("See Recommendations"),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.accent,
-                    side: const BorderSide(color: AppColors.accent),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/recommendations');
+                        },
+                        icon: const Icon(Icons.auto_awesome, size: 18),
+                        label: const Text('See Recommendations'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.accent,
+                          side: const BorderSide(color: AppColors.accent),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                    const SizedBox(width: 12),
+                    AnimatedBuilder(
+                      animation: _locationGlowAnimation,
+                      builder: (context, child) {
+                        final glowStrength = destinations.isEmpty
+                            ? 0.0
+                            : _locationGlowAnimation.value;
+                        return Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: glowStrength == 0
+                                ? []
+                                : [
+                                    BoxShadow(
+                                      color: AppColors.error.withValues(
+                                        alpha: 0.35 * glowStrength,
+                                      ),
+                                      blurRadius: 10 + (18 * glowStrength),
+                                      spreadRadius: 1 + (2 * glowStrength),
+                                    ),
+                                  ],
+                          ),
+                          child: child,
+                        );
+                      },
+                      child: Material(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        shape: const CircleBorder(),
+                        child: IconButton(
+                          icon: const Icon(Icons.location_on),
+                          color: AppColors.error,
+                          onPressed: destinations.isEmpty
+                              ? null
+                              : () {
+                                  if (_isDestinationSheetOpen &&
+                                      Navigator.of(context).canPop()) {
+                                    Navigator.of(context).pop();
+                                    return;
+                                  }
+                                  _showDestinationPicker(destinations);
+                                },
+                          tooltip: 'Selected places',
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
 
@@ -183,12 +285,6 @@ class _AiChatPageState extends State<AiChatPage> {
               const SizedBox(height: 24),
             ],
           ),
-          if (destinations.isNotEmpty)
-            Positioned(
-              right: 16,
-              top: MediaQuery.of(context).size.height * 0.28,
-              child: _buildDestinationDots(destinations),
-            ),
         ],
       ),
 
@@ -309,19 +405,13 @@ class _AiChatPageState extends State<AiChatPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: List.generate(destinations.length, (index) {
-        String description = "";
-        if (destinations[index] == "Mirissa") {
-          description = "(Whale watching)";
-        } else if (destinations[index] == "Galle") {
-          description = "(Historic Fort)";
-        } else if (destinations[index] == "Yala") {
-          description = "(Safari)";
-        }
+        final subtitle = _destinationSubtitle(destinations[index]);
+        final suffix = subtitle == null ? "" : " ($subtitle)";
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 6),
           child: Text(
-            "• ${index + 1}. ${destinations[index]} $description",
+            "• ${index + 1}. ${destinations[index]}$suffix",
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 14,
@@ -333,167 +423,139 @@ class _AiChatPageState extends State<AiChatPage> {
     );
   }
 
-  Widget _buildDestinationDots(List<String> destinations) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: destinations.asMap().entries.map((entry) {
-        final index = entry.key;
-        final isActive = index == destinations.length - 1;
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: InkWell(
-            onTap: () {
-              _showDestinationDetails(destinations, index);
-            },
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.primary
-                    : AppColors.textDisabled.withValues(alpha: 0.4),
-                shape: BoxShape.circle,
-                boxShadow: isActive
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  void _showDestinationDetails(List<String> destinations, int selectedIndex) {
-    // Unfocus any focused widget to prevent keyboard from appearing
+  void _showDestinationPicker(List<String> destinations) {
+    if (_isDestinationSheetOpen) return;
+    _isDestinationSheetOpen = true;
     FocusScope.of(context).unfocus();
 
-    showGeneralDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      barrierColor: Colors.black26,
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-          },
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: 28,
-                top: MediaQuery.of(context).size.height * 0.28,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: false,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(1, 0),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOut,
-                        ),
-                      ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.shadow,
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: destinations.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final destination = entry.value;
-                        final isSelected = index == selectedIndex;
-
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.pushNamed(context, '/adventure');
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Colors.transparent,
-                              borderRadius:
-                                  index == 0 && index == destinations.length - 1
-                                  ? BorderRadius.circular(16)
-                                  : index == 0
-                                  ? const BorderRadius.vertical(
-                                      top: Radius.circular(16),
-                                    )
-                                  : index == destinations.length - 1
-                                  ? const BorderRadius.vertical(
-                                      bottom: Radius.circular(16),
-                                    )
-                                  : BorderRadius.zero,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  destination,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? AppColors.textOnPrimary
-                                        : AppColors.textPrimary,
-                                    fontSize: 14,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
-                                  ),
-                                ),
-                                if (isSelected) ...[
-                                  const SizedBox(width: 8),
-                                  const Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: AppColors.textOnPrimary,
-                                    size: 12,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 12,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Selected places',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        color: AppColors.textSecondary,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: destinations.length,
+                  separatorBuilder: (context, index) {
+                    return const Divider(height: 1, color: AppColors.divider);
+                  },
+                  itemBuilder: (context, index) {
+                    final destination = destinations[index];
+                    final subtitle = _destinationSubtitle(destination);
+
+                    return ListTile(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _navigateToDestination(destination);
+                      },
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.location_on,
+                          color: AppColors.error,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        destination,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      subtitle: subtitle == null
+                          ? null
+                          : Text(
+                              subtitle,
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                      trailing: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: AppColors.textDisabled,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
             ),
           ),
         );
       },
     ).then((_) {
       if (!mounted) return;
-      // Ensure keyboard stays hidden after popup closes
+      _isDestinationSheetOpen = false;
       FocusScope.of(context).unfocus();
     });
+  }
+
+  String? _destinationSubtitle(String destination) {
+    return _destinationSubtitles[destination];
+  }
+
+  void _navigateToDestination(String destination) {
+    final route = _destinationRoutes[destination] ?? '/place-details';
+    Navigator.pushNamed(context, route);
   }
 
   List<String> _latestDestinations() {
@@ -507,31 +569,22 @@ class _AiChatPageState extends State<AiChatPage> {
   }
 
   void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
 
     setState(() {
       _messages.add(
-        ChatMessage(
-          text: _messageController.text,
-          isUser: true,
-          timestamp: DateTime.now(),
-        ),
+        ChatMessage(text: text, isUser: true, timestamp: DateTime.now()),
       );
     });
 
     _messageController.clear();
 
-    // Scroll to bottom
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
+    _scrollToBottom(delay: const Duration(milliseconds: 100));
 
     // Simulate AI response
     Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
       setState(() {
         _messages.add(
           ChatMessage(
@@ -543,9 +596,17 @@ class _AiChatPageState extends State<AiChatPage> {
         );
       });
 
+      _scrollToBottom();
+    });
+  }
+
+  void _scrollToBottom({Duration delay = Duration.zero}) {
+    if (!_scrollController.hasClients) return;
+    Future.delayed(delay, () {
+      if (!mounted || !_scrollController.hasClients) return;
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: _scrollAnimationDuration,
         curve: Curves.easeOut,
       );
     });
@@ -553,6 +614,7 @@ class _AiChatPageState extends State<AiChatPage> {
 
   @override
   void dispose() {
+    _locationGlowController.dispose();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
