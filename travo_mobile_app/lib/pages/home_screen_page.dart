@@ -24,7 +24,9 @@ class HomeScreenPage extends StatelessWidget {
                   children: [
                     // User Avatar + Name
                     TextButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/profile');
+                      },
                       icon: const CircleAvatar(
                         radius: 20,
                         backgroundImage: NetworkImage(
@@ -339,5 +341,3 @@ class _DestinationCard extends StatelessWidget {
     );
   }
 }
-
-
