@@ -9,21 +9,19 @@ class TransportationPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Stack(
+        bottom: false,
+        child: Column(
           children: [
-            Column(
-              children: [
-                _header(context),
-                Expanded(child: _content()),
-              ],
-            ),
-            _bottomAIBar(context),
+            _header(context),
+            Expanded(child: _content(context)),
           ],
         ),
       ),
+      bottomNavigationBar: _bottomAIBar(context),
     );
   }
 
+  // ---------------- HEADER ----------------
   Widget _header(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -32,24 +30,17 @@ class TransportationPage extends StatelessWidget {
         border: Border(bottom: BorderSide(color: AppColors.divider)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new),
-                color: AppColors.textPrimary,
-                onPressed: () => Navigator.pop(context),
-              ),
-              const Text(
-                'Transportation',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 6),
+          const Expanded(
+            child: Text(
+              'Transportation',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ),
           TextButton(
             onPressed: () {},
@@ -66,23 +57,45 @@ class TransportationPage extends StatelessWidget {
     );
   }
 
-  Widget _content() {
+  // ---------------- CONTENT ----------------
+  Widget _content(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 140),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          _placesSection(),
+          _placesSection(context),
           const Divider(height: 24),
           _routeSection(),
-          const SizedBox(height: 30),
         ],
       ),
     );
   }
 
-  Widget _placesSection() {
+  // ---------------- PLACES SECTION ----------------
+  Widget _placesSection(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // ✅ STANDARD CARD SIZE
+    final cardWidth = (screenWidth * 0.78).clamp(260.0, 320.0);
+    const cardHeight = 360.0;
+
+    final places = [
+      {
+        'title': 'Yala National Park',
+        'subtitle': 'Southern Sri Lanka',
+        'imageUrl':
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuA5X8QjUkNLCMg00ftHnWovTNai-W6-1i44wRdEXVZZF7I1zfHgcxi_SQ-nG4fRDjsO4O0O4f_pLa0oVm-JUpfPVFsSMQNdZX6Jk_2hzJjiZDHH1hC0gT3xUlsCg-v5xR3X5PtCglnkfWVV9rWUGSmBjinJSCAJ7d--tetcrA-FA90AduISZvqyZREvvlnjeF9dWvO_iB94j9CioGosdHrs0JLlgkY7NW3vzdAW2npN0kLoZm6zHd4PtyxEOGlq1arIuUztHUW7OZc',
+      },
+      {
+        'title': 'Mirissa Beach',
+        'subtitle': 'Southern Sri Lanka',
+        'imageUrl':
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuBDjZ3BsdtxDLdebcpX5d8jyXoQllW_w7Nmjq2N17tD3O2qGO7k0fHcy0coP9K6bpLE63JH2nAjr0h-LsX1xkhVZ5S7YMS6uxXoqfJuclwiICIxMzHgyhSODqUmb4xB6zzCtyQ7tXySlsZ3kcb_XNWc-4Exmtft1S0mGHTCPoaIA4Hmux7Umm_-NO2B4NASwwB3gaz3TJ8lCswt-e9Wxh5J22k4vPdvXIJo9WO2oK_WTyjI-DYhlNVE77dbNSKPd6kNq1BknSkYyXM',
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -104,85 +117,63 @@ class TransportationPage extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 300,
-          child: ListView(
+          height: cardHeight,
+          child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: const [
-              _PlaceCard(
-                title: 'Yala National Park',
-                subtitle: 'Southern Sri Lanka',
-                imageUrl:
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuA5X8QjUkNLCMg00ftHnWovTNai-W6-1i44wRdEXVZZF7I1zfHgcxi_SQ-nG4fRDjsO4O0O4f_pLa0oVm-JUpfPVFsSMQNdZX6Jk_2hzJjiZDHH1hC0gT3xUlsCg-v5xR3X5PtCglnkfWVV9rWUGSmBjinJSCAJ7d--tetcrA-FA90AduISZvqyZREvvlnjeF9dWvO_iB94j9CioGosdHrs0JLlgkY7NW3vzdAW2npN0kLoZm6zHd4PtyxEOGlq1arIuUztHUW7OZc',
-              ),
-              _PlaceCard(
-                title: 'Mirissa Beach',
-                subtitle: 'Southern Sri Lanka',
-                imageUrl:
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuBDjZ3BsdtxDLdebcpX5d8jyXoQllW_w7Nmjq2N17tD3O2qGO7k0fHcy0coP9K6bpLE63JH2nAjr0h-LsX1xkhVZ5S7YMS6uxXoqfJuclwiICIxMzHgyhSODqUmb4xB6zzCtyQ7tXySlsZ3kcb_XNWc-4Exmtft1S0mGHTCPoaIA4Hmux7Umm_-NO2B4NASwwB3gaz3TJ8lCswt-e9Wxh5J22k4vPdvXIJo9WO2oK_WTyjI-DYhlNVE77dbNSKPd6kNq1BknSkYyXM',
-              ),
-            ],
+            itemCount: places.length,
+            itemBuilder: (context, index) {
+              final place = places[index];
+              return _PlaceCard(
+                width: cardWidth,
+                height: cardHeight,
+                title: place['title']!,
+                subtitle: place['subtitle']!,
+                imageUrl: place['imageUrl']!,
+              );
+            },
           ),
         ),
       ],
     );
   }
 
+  // ---------------- ROUTE SECTION ----------------
   Widget _routeSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return const Padding(
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Route Itinerary',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 16),
-          const _RouteItem(title: 'Colombo', subtitle: 'Start Point'),
-          const _RouteItem(title: 'Mirissa', subtitle: 'Stay 2 days'),
-          const _RouteItem(
-            title: 'Yala National Park',
-            subtitle: 'Stay 2 days',
-          ),
-          const SizedBox(height: 20),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: Image.network(
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuDj7OqO5s9BAzDKvLXYYYLrxF9GHuafT5ETRru0EYstn_6Q70ARHGBB-6MLiW2jkUr-0FeE8EuNLB2H1sJbL41V5MabE_lCZFjnstZs3ZkdJJoNf5dxXWHQ7Pb4zC6-L0n7kRU4yLikpZwxwj6GEMBSFNktDqcz8iGHRvYtacsJjQ_q3-kD2DgcKWUKFnOso_MqJ7FNdLNxqZfCag3fTn_KHrAhVkbHl-5wX0Xfv62jUzI5kTU1czMNqTLwv6gHHTdDGPVXL9ZYwcA',
-              height: 200,
-              fit: BoxFit.cover,
-            ),
-          ),
+          SizedBox(height: 16),
+          _RouteItem(title: 'Colombo', subtitle: 'Start Point'),
+          _RouteItem(title: 'Mirissa', subtitle: 'Stay 2 days'),
+          _RouteItem(title: 'Yala National Park', subtitle: 'Stay 2 days'),
         ],
       ),
     );
   }
 
+  // ---------------- BOTTOM BAR ----------------
   Widget _bottomAIBar(BuildContext context) {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
+    return SafeArea(
+      top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.divider)),
         ),
         child: Row(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight10,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.mic, color: AppColors.primary),
-                onPressed: () {},
-              ),
+            IconButton(
+              icon: const Icon(Icons.mic, color: AppColors.primary),
+              onPressed: () {},
             ),
-            const SizedBox(width: 8),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -194,13 +185,10 @@ class TransportationPage extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: 'Describe changes you want...',
                     border: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
             Container(
               decoration: const BoxDecoration(
                 color: AppColors.primary,
@@ -218,12 +206,17 @@ class TransportationPage extends StatelessWidget {
   }
 }
 
+// ================= PLACE CARD =================
 class _PlaceCard extends StatelessWidget {
+  final double width;
+  final double height;
   final String title;
   final String subtitle;
   final String imageUrl;
 
   const _PlaceCard({
+    required this.width,
+    required this.height,
     required this.title,
     required this.subtitle,
     required this.imageUrl,
@@ -232,79 +225,74 @@ class _PlaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 280,
-      height: 300,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final imageHeight = (constraints.maxHeight * 0.42).clamp(
-            105.0,
-            135.0,
-          );
+      width: width,
+      height: height,
+      child: Container(
+        margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Column(
+          children: [
+            // ✅ IMAGE (FIXED, SAFE)
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
 
-          return Container(
-            margin: const EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: AppColors.divider),
-              color: AppColors.surface,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(28),
-                  ),
-                  child: Image.network(
-                    imageUrl,
-                    height: imageHeight,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const _RowField(label: 'Duration', value: '2 Days'),
-                          const _RowField(label: 'Priority', value: 'High'),
-                          const _RowField(label: 'Budget', value: '\$250'),
-                        ],
+            // ✅ DETAILS (NO OVERFLOW)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const _RowField(label: 'Duration', value: '2 Days'),
+                      const _RowField(label: 'Priority', value: 'High'),
+                      const _RowField(label: 'Budget', value: '\$250'),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
 }
 
+// ================= ROW FIELD =================
 class _RowField extends StatelessWidget {
   final String label;
   final String value;
@@ -314,16 +302,17 @@ class _RowField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(label,
+              style: const TextStyle(color: AppColors.textSecondary)),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
             ),
             child: Text(
               value,
@@ -336,6 +325,7 @@ class _RowField extends StatelessWidget {
   }
 }
 
+// ================= ROUTE ITEM =================
 class _RouteItem extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -362,17 +352,13 @@ class _RouteItem extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text(
                 subtitle,
                 style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                ),
+                    fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
           ),
