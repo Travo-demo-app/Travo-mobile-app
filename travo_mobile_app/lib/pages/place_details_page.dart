@@ -27,7 +27,7 @@ class TravoPlaceDetailsPage extends StatelessWidget {
   // ---------------- HERO ----------------
   Widget _hero(BuildContext context) {
     return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.42,
+      height: MediaQuery.of(context).size.height * 0.32,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -50,7 +50,10 @@ class TravoPlaceDetailsPage extends StatelessWidget {
             right: 0,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -161,7 +164,7 @@ class TravoPlaceDetailsPage extends StatelessWidget {
   // ---------------- CONTENT ----------------
   Widget _content() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 140),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -188,12 +191,12 @@ class TravoPlaceDetailsPage extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
           const Text(
             'Explore',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           LayoutBuilder(
             builder: (context, constraints) {
               final exploreItems = [
@@ -207,10 +210,11 @@ class TravoPlaceDetailsPage extends StatelessWidget {
                   label: 'Stays',
                   color: Colors.orange,
                 ),
-                const _ExploreItem(
+                _ExploreItem(
                   icon: Icons.restaurant,
                   label: 'Food',
                   color: Colors.green,
+                  onTap: () => Navigator.pushNamed(context, '/food-dining'),
                 ),
                 const _ExploreItem(
                   icon: Icons.kayaking,
@@ -240,15 +244,15 @@ class TravoPlaceDetailsPage extends StatelessWidget {
                 ),
               ];
               final crossAxisCount = constraints.maxWidth < 360 ? 3 : 4;
-              final itemAspectRatio = constraints.maxWidth < 360 ? 0.7 : 0.8;
+              final itemAspectRatio = constraints.maxWidth < 360 ? 0.9 : 1.0;
 
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: 20,
-                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 8,
                   childAspectRatio: itemAspectRatio,
                 ),
                 itemCount: exploreItems.length,
@@ -256,7 +260,7 @@ class TravoPlaceDetailsPage extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -401,15 +405,15 @@ class _ExploreItem extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Icon(icon, color: color),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             label,
             style: const TextStyle(

@@ -19,6 +19,7 @@ import 'pages/place_details_page.dart';
 import 'pages/transportation_page.dart';
 import 'pages/adventure_page.dart';
 import 'pages/map_page.dart';
+import 'pages/food_dining_page.dart';
 
 void main() {
   runApp(const TravoApp());
@@ -36,7 +37,7 @@ class TravoApp extends StatelessWidget {
       initialRoute: '/',
       onGenerateRoute: (settings) {
         Widget page;
-        
+
         switch (settings.name) {
           case '/':
             page = const WelcomePage();
@@ -77,7 +78,9 @@ class TravoApp extends StatelessWidget {
             break;
           case '/add-story-details':
             final destinationName = settings.arguments as String?;
-            page = AddStoryDetailsPage(destinationName: destinationName ?? 'Destination');
+            page = AddStoryDetailsPage(
+              destinationName: destinationName ?? 'Destination',
+            );
             break;
           case '/recommendations':
             page = const TravoRecommendationsPage();
@@ -88,6 +91,9 @@ class TravoApp extends StatelessWidget {
           case '/transportation':
             page = const TransportationPage();
             break;
+          case '/food-dining':
+            page = const FoodDiningPage();
+            break;
           case '/adventure':
             page = const TravoAdventurePage();
             break;
@@ -97,7 +103,7 @@ class TravoApp extends StatelessWidget {
           default:
             page = const WelcomePage();
         }
-        
+
         return SlideRightRoute(page: page);
       },
     );
