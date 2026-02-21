@@ -43,7 +43,7 @@ class SharedBottomNavBar extends StatelessWidget {
                   active: activeRoute == '/adventure',
                   route: '/adventure',
                 ),
-                const SizedBox(width: 60), // space for center button
+                const SizedBox(width: 70), // space for center button
                 _BottomNavItem(
                   icon: Icons.map,
                   label: "Map",
@@ -62,7 +62,7 @@ class SharedBottomNavBar extends StatelessWidget {
 
           // Center Floating Button - AI Chat
           Positioned(
-            top: -20,
+            top: -25,
             left: 0,
             right: 0,
             child: Center(
@@ -72,45 +72,29 @@ class SharedBottomNavBar extends StatelessWidget {
                     Navigator.pushNamed(context, '/ai-chat');
                   }
                 },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: activeRoute == '/ai-chat'
+                        ? AppColors.accent
+                        : AppColors.primary,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
                         color: activeRoute == '/ai-chat'
-                            ? AppColors.accent
-                            : AppColors.primary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: activeRoute == '/ai-chat'
-                                ? AppColors.accentLight20
-                                : AppColors.primaryLight20,
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                            ? AppColors.accentLight20
+                            : AppColors.primaryLight20,
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
-                      child: const Icon(
-                        Icons.support_agent,
-                        color: AppColors.textOnPrimary,
-                        size: 32,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Assistant',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: activeRoute == '/ai-chat'
-                            ? AppColors.primary
-                            : AppColors.textDisabled,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    color: AppColors.textOnPrimary,
+                    size: 36,
+                  ),
                 ),
               ),
             ),

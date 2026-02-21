@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
 import '../core/widgets/shared_bottom_nav_bar.dart';
+import '../data/sri_lankan_destinations.dart';
 
 class HomeScreenPage extends StatelessWidget {
   const HomeScreenPage({super.key});
@@ -85,15 +86,17 @@ class HomeScreenPage extends StatelessWidget {
 
               // ===== GREETING =====
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                padding: const EdgeInsets.only(
+                  right: 16,
+                  top: 8,
+                  bottom: 8,
+                  left: 0,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Explore",
+                      "Explore the",
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w300,
@@ -153,8 +156,8 @@ class HomeScreenPage extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      width: 56,
-                      height: 56,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(20),
@@ -170,46 +173,57 @@ class HomeScreenPage extends StatelessWidget {
 
               // ===== DESTINATIONS LIST =====
               Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Best Destination",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text(
+                        "",
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
                 padding: const EdgeInsets.only(left: 16, top: 8),
                 child: SizedBox(
-                  height: 300,
-                  child: ListView(
+                  height: 380,
+                  child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    children: const [
-                      _DestinationCard(
-                        imageUrl:
-                            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?fit=crop&w=400&h=300",
-                        title: "Niladri Reservoir",
-                        location: "Tekergat, Sunamganj",
-                        rating: 4.7,
-                      ),
-                      SizedBox(width: 16),
-                      _DestinationCard(
-                        imageUrl:
-                            "https://images.unsplash.com/photo-1501785888041-af3ef285b470?fit=crop&w=400&h=300",
-                        title: "Darma Valley",
-                        location: "Darma, Uttarakhand",
-                        rating: 4.9,
-                      ),
-                      SizedBox(width: 16),
-                      _DestinationCard(
-                        imageUrl:
-                            "https://images.unsplash.com/photo-1526779259212-19c8f2eeb0f0?fit=crop&w=400&h=300",
-                        title: "Misty Mountains",
-                        location: "Switzerland",
-                        rating: 4.8,
-                      ),
-                    ],
+                    itemCount: sriLankanDestinations.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 16),
+                    itemBuilder: (context, index) {
+                      final destination = sriLankanDestinations[index];
+                      return _DestinationCard(
+                        imageUrl: destination.imageUrl,
+                        title: destination.title,
+                        location: destination.location,
+                        rating: destination.rating,
+                      );
+                    },
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
             ],
           ),
         ),
       ),
 
-      // ===== SHARED BOTTOM NAV BAR =====
+      // ===== SHARED BOTTOM NAV BAR ===
       bottomNavigationBar: const SharedBottomNavBar(activeRoute: '/home'),
     );
   }
@@ -240,7 +254,7 @@ class _DestinationCard extends StatelessWidget {
           Stack(
             children: [
               Container(
-                height: 180,
+                height: 240,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(28),
                   image: DecorationImage(

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
 import '../core/widgets/shared_bottom_nav_bar.dart';
+import '../core/services/trip_data_service.dart';
+import '../data/recommendations_data.dart';
+import '../data/adventure_data.dart';
+import 'place_details_page.dart';
 
 class AiChatPage extends StatefulWidget {
   const AiChatPage({super.key});
@@ -12,13 +16,6 @@ class AiChatPage extends StatefulWidget {
 class _AiChatPageState extends State<AiChatPage>
     with SingleTickerProviderStateMixin {
   static const Duration _scrollAnimationDuration = Duration(milliseconds: 300);
-  static const Map<String, String> _destinationSubtitles = {
-    'Mirissa': 'Whale watching',
-    'Galle': 'Historic Fort',
-    'Yala': 'Safari',
-  };
-
-  static const Map<String, String> _destinationRoutes = {'Yala': '/adventure'};
 
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -67,7 +64,8 @@ class _AiChatPageState extends State<AiChatPage>
 
   @override
   Widget build(BuildContext context) {
-    final destinations = _latestDestinations();
+    final tripService = TripDataService();
+    final tripDestinations = tripService.hasCurrentTrip ? tripService.currentTripItems : <TripItem>[];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -161,7 +159,7 @@ class _AiChatPageState extends State<AiChatPage>
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/recommendations');
+                          _showRecommendationsOverlay();
                         },
                         icon: const Icon(Icons.auto_awesome, size: 18),
                         label: const Text('See Recommendations'),
@@ -182,7 +180,7 @@ class _AiChatPageState extends State<AiChatPage>
                     AnimatedBuilder(
                       animation: _locationGlowAnimation,
                       builder: (context, child) {
-                        final glowStrength = destinations.isEmpty
+                        final glowStrength = tripDestinations.isEmpty
                             ? 0.0
                             : _locationGlowAnimation.value;
                         return Container(
@@ -209,7 +207,7 @@ class _AiChatPageState extends State<AiChatPage>
                         child: IconButton(
                           icon: const Icon(Icons.location_on),
                           color: AppColors.error,
-                          onPressed: destinations.isEmpty
+                          onPressed: tripDestinations.isEmpty
                               ? null
                               : () {
                                   if (_isDestinationSheetOpen &&
@@ -217,7 +215,7 @@ class _AiChatPageState extends State<AiChatPage>
                                     Navigator.of(context).pop();
                                     return;
                                   }
-                                  _showDestinationPicker(destinations);
+                                  _showDestinationPicker(tripDestinations);
                                 },
                           tooltip: 'Selected places',
                         ),
@@ -405,13 +403,10 @@ class _AiChatPageState extends State<AiChatPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: List.generate(destinations.length, (index) {
-        final subtitle = _destinationSubtitle(destinations[index]);
-        final suffix = subtitle == null ? "" : " ($subtitle)";
-
         return Padding(
           padding: const EdgeInsets.only(bottom: 6),
           child: Text(
-            "• ${index + 1}. ${destinations[index]}$suffix",
+            "• ${index + 1}. ${destinations[index]}",
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 14,
@@ -423,10 +418,12 @@ class _AiChatPageState extends State<AiChatPage>
     );
   }
 
-  void _showDestinationPicker(List<String> destinations) {
+  void _showDestinationPicker(List<TripItem> destinations) {
     if (_isDestinationSheetOpen) return;
     _isDestinationSheetOpen = true;
     FocusScope.of(context).unfocus();
+
+    final tripService = TripDataService();
 
     showModalBottomSheet(
       context: context,
@@ -465,9 +462,9 @@ class _AiChatPageState extends State<AiChatPage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Selected places',
-                        style: TextStyle(
+                      Text(
+                        'Selected places - ${tripService.currentTripName}',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
@@ -492,42 +489,47 @@ class _AiChatPageState extends State<AiChatPage>
                   },
                   itemBuilder: (context, index) {
                     final destination = destinations[index];
-                    final subtitle = _destinationSubtitle(destination);
 
                     return ListTile(
                       onTap: () {
                         Navigator.pop(context);
-                        _navigateToDestination(destination);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TravoPlaceDetailsPage(
+                              title: destination.title,
+                              location: destination.location,
+                              imageUrl: destination.mapImage,
+                              rating: 4.5,
+                            ),
+                          ),
+                        );
                       },
                       leading: Container(
-                        width: 40,
-                        height: 40,
+                        width: 50,
+                        height: 50,
                         decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.location_on,
-                          color: AppColors.error,
-                          size: 20,
+                          image: DecorationImage(
+                            image: NetworkImage(destination.mapImage),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       title: Text(
-                        destination,
+                        destination.title,
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      subtitle: subtitle == null
-                          ? null
-                          : Text(
-                              subtitle,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
+                      subtitle: Text(
+                        '${destination.location} • ${destination.tag}',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
                       trailing: const Icon(
                         Icons.arrow_forward_ios,
                         size: 14,
@@ -547,25 +549,6 @@ class _AiChatPageState extends State<AiChatPage>
       _isDestinationSheetOpen = false;
       FocusScope.of(context).unfocus();
     });
-  }
-
-  String? _destinationSubtitle(String destination) {
-    return _destinationSubtitles[destination];
-  }
-
-  void _navigateToDestination(String destination) {
-    final route = _destinationRoutes[destination] ?? '/place-details';
-    Navigator.pushNamed(context, route);
-  }
-
-  List<String> _latestDestinations() {
-    for (int index = _messages.length - 1; index >= 0; index--) {
-      final destinations = _messages[index].destinations;
-      if (destinations != null && destinations.isNotEmpty) {
-        return destinations;
-      }
-    }
-    return [];
   }
 
   void _sendMessage() {
@@ -612,6 +595,15 @@ class _AiChatPageState extends State<AiChatPage>
     });
   }
 
+  void _showRecommendationsOverlay() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => const _RecommendationsBottomSheet(),
+    );
+  }
+
   @override
   void dispose() {
     _locationGlowController.dispose();
@@ -634,4 +626,235 @@ class ChatMessage {
     required this.timestamp,
     this.destinations,
   });
+}
+
+// ===== RECOMMENDATIONS BOTTOM SHEET =====
+class _RecommendationsBottomSheet extends StatefulWidget {
+  const _RecommendationsBottomSheet();
+
+  @override
+  State<_RecommendationsBottomSheet> createState() =>
+      _RecommendationsBottomSheetState();
+}
+
+class _RecommendationsBottomSheetState
+    extends State<_RecommendationsBottomSheet> {
+  bool _isDismissing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<DraggableScrollableNotification>(
+      onNotification: (notification) {
+        if (notification.extent <= 0.3 && !_isDismissing && mounted) {
+          _isDismissing = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          });
+        }
+        return true;
+      },
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.88,
+        minChildSize: 0.1,
+        maxChildSize: 0.88,
+        snap: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.only(top: 12, bottom: 12),
+                  color: Colors.transparent,
+                  width: double.infinity,
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Top Picks for You',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Based on your recent interests',
+                              style: TextStyle(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      CircleAvatar(
+                        backgroundColor: AppColors.surfaceLight,
+                        child: const Icon(
+                          Icons.tune,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 24,
+                      crossAxisSpacing: 24,
+                      childAspectRatio: 4 / 5,
+                    ),
+                    itemCount: recommendationsData.length,
+                    itemBuilder: (context, index) =>
+                        _RecommendationCard(item: recommendationsData[index]),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ===== RECOMMENDATION CARD =====
+class _RecommendationCard extends StatelessWidget {
+  final RecommendationItem item;
+
+  const _RecommendationCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TravoPlaceDetailsPage(
+              title: item.title,
+              location: item.location,
+              imageUrl: item.imageUrl,
+              rating: item.rating,
+            ),
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.network(
+                    item.imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: CircleAvatar(
+                    backgroundColor: AppColors.textPrimary.withValues(
+                      alpha: 0.25,
+                    ),
+                    child: const Icon(
+                      Icons.favorite_border,
+                      color: AppColors.textOnPrimary,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          size: 14,
+                          color: AppColors.warning,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          item.rating.toString(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            item.title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Row(
+            children: [
+              const Icon(
+                Icons.location_on,
+                size: 14,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  item.location,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

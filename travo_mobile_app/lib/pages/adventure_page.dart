@@ -1,8 +1,72 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
+import '../data/adventure_data.dart';
+import '../core/services/trip_data_service.dart';
+import '../core/widgets/shared_bottom_nav_bar.dart';
 
-class TravoAdventurePage extends StatelessWidget {
+class TravoAdventurePage extends StatefulWidget {
   const TravoAdventurePage({super.key});
+
+  @override
+  State<TravoAdventurePage> createState() => _TravoAdventurePageState();
+}
+
+class _TravoAdventurePageState extends State<TravoAdventurePage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late SavedTrip _selectedTrip;
+  late List<TripItem> _currentTripItems;
+  late List<SavedTrip> _allTrips;
+  int _lastKnownServiceVersion = 0; // Track service version
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _allTrips = getAllTrips();
+    _selectedTrip = _allTrips[0];
+    _currentTripItems = List.from(_selectedTrip.itinerary);
+    
+    // Update the trip data service
+    _updateTripService();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Sync trip items from service when returning to this page
+    _syncTripItemsFromService();
+  }
+
+  void _syncTripItemsFromService() {
+    final tripService = TripDataService();
+    
+    // Check if service version changed (meaning items were added/modified externally)
+    if (tripService.hasCurrentTrip && 
+        tripService.currentTripName == _selectedTrip.name &&
+        tripService.version != _lastKnownServiceVersion) {
+      setState(() {
+        // Sync the latest items from service
+        _currentTripItems = tripService.currentTripItems;
+        _lastKnownServiceVersion = tripService.version;
+      });
+    }
+  }
+
+  void _updateTripService() {
+    TripDataService().updateCurrentTrip(
+      tripItems: _currentTripItems,
+      tripName: _selectedTrip.name,
+    );
+    _lastKnownServiceVersion = TripDataService().version;
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,10 +75,366 @@ class TravoAdventurePage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context),
-            Expanded(child: _buildTimeline(context)),
+            _buildTabs(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildCurrentTripTab(),
+                  _buildAllTripsTab(),
+                ],
+              ),
+            ),
           ],
         ),
+      ),
+      bottomNavigationBar: const SharedBottomNavBar(activeRoute: '/adventure'),
+    );
+  }
+
+  Widget _buildTabs() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicatorColor: AppColors.primary,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textSecondary,
+        labelStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+        tabs: const [
+          Tab(text: 'Current Trip'),
+          Tab(text: 'All Trips'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurrentTripTab() {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border(bottom: BorderSide(color: AppColors.divider)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _selectedTrip.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () => _showEditTripNameDialog(),
+                          child: const Icon(
+                            Icons.edit,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_selectedTrip.dates} • ${_selectedTrip.duration}',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.share, size: 20),
+                color: AppColors.primary,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Share ${_selectedTrip.name}'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Itinerary',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              
+            ],
+          ),
+        ),
+        Expanded(
+          child: ReorderableListView.builder(
+            buildDefaultDragHandles: false,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _currentTripItems.length,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) {
+                  newIndex -= 1;
+                }
+                final item = _currentTripItems.removeAt(oldIndex);
+                _currentTripItems.insert(newIndex, item);
+                // Update indices
+                for (int i = 0; i < _currentTripItems.length; i++) {
+                  _currentTripItems[i].index = i + 1;
+                }
+                
+                // Update the trip data service
+                _updateTripService();
+              });
+            },
+            itemBuilder: (context, index) {
+              final item = _currentTripItems[index];
+              return Padding(
+                key: ValueKey(item.title),
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildTimelineItem(
+                  context: context,
+                  item: item,
+                  isLast: index == _currentTripItems.length - 1,
+                  itemIndex: index,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAllTripsTab() {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border(bottom: BorderSide(color: AppColors.divider)),
+          ),
+          child: const Text(
+            'My Trips',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _allTrips.length,
+            itemBuilder: (context, index) {
+              final trip = _allTrips[index];
+              return _buildTripCard(trip);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTripCard(SavedTrip trip) {
+    final isSelected = _selectedTrip.id == trip.id;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedTrip = trip;
+          _currentTripItems = List.from(trip.itinerary);
+          _tabController.animateTo(0);
+          
+          // Update the trip data service
+          _updateTripService();
+        });
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        trip.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          setState(() {
+                            _selectedTrip = trip;
+                            _currentTripItems = List.from(trip.itinerary);
+                            _tabController.animateTo(0); // Switch to Current Trip tab
+                            
+                            // Update the trip data service
+                            _updateTripService();
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Now editing ${trip.name}'),
+                              backgroundColor: AppColors.primary,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        } else if (value == 'delete') {
+                          _showDeleteDialog(trip);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 18),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 18, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      trip.dates,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      trip.duration,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Icon(Icons.location_on, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${trip.destinations} destinations',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+  void _showDeleteDialog(SavedTrip trip) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Trip'),
+        content: Text('Are you sure you want to delete "${trip.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _allTrips.remove(trip);
+                // If deleted trip was selected, switch to first available trip
+                if (_selectedTrip.id == trip.id && _allTrips.isNotEmpty) {
+                  _selectedTrip = _allTrips[0];
+                  _currentTripItems = List.from(_selectedTrip.itinerary);
+                  
+                  // Update the trip data service
+                  _updateTripService();
+                }
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${trip.name} deleted'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
@@ -36,7 +456,7 @@ class TravoAdventurePage extends StatelessWidget {
                 onTap: () => Navigator.pop(context),
                 child: CircleAvatar(
                   radius: 22,
-                  backgroundColor: AppColors.surfaceLight,
+                  backgroundColor: AppColors.background,
                   child: const Icon(Icons.arrow_back_ios_new, size: 20),
                 ),
               ),
@@ -44,14 +464,14 @@ class TravoAdventurePage extends StatelessWidget {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    'Sri Lanka Adventure',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    _selectedTrip.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   Text(
-                    'Oct 12 - Oct 24 • 12 Days',
-                    style: TextStyle(
+                    '${_selectedTrip.dates} • ${_selectedTrip.duration}',
+                    style: const TextStyle(
                       fontSize: 10,
                       color: AppColors.textSecondary,
                     ),
@@ -62,7 +482,7 @@ class TravoAdventurePage extends StatelessWidget {
           ),
           CircleAvatar(
             radius: 22,
-            backgroundColor: AppColors.surfaceLight,
+            backgroundColor: AppColors.background,
             child: const Icon(Icons.share, color: AppColors.primary),
           ),
         ],
@@ -70,130 +490,48 @@ class TravoAdventurePage extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeline(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSectionHeader(),
-        const SizedBox(height: 16),
-        _buildTimelineItem(
-          context: context,
-          index: '1',
-          title: 'Colombo Arrival',
-          subtitle: 'Oct 12 - Oct 15 • 3 Nights',
-          tag: 'Flight',
-          stay: 'Hilton Hotel',
-          stayInfo: 'Check-in 3 PM',
-          icon: Icons.hotel,
-          mapImage:
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuA8o2AuZ9rX6RorwCZNpmbdkpnduZ4zKgBIcavJqcd0eszDorReta7xe5txeEZgIIdLVcYtjUlepyiv1dcmXooXzfSnX0BmZt0ErW_G2Z1d0OCsAgvfds0wlmV1wsux5Z6mfq2sBVJwUh66wKgoevl8xQ-alDJ0fh2TAwl2v98oE0zjjRmtNmOnRUhJQ3_fGbAwf9FXa1M7oFYSfVTc58LlBvcMFrrjLHec21FkdcW2ZWO3cE8QvjpAmmKa-Sqp_GND5cIAicN1vs',
-          mapTagIcon: Icons.location_on,
-        ),
-        const SizedBox(height: 16),
-        _buildTimelineItem(
-          context: context,
-          index: '2',
-          title: 'Galle',
-          subtitle: 'Oct 15 - Oct 19 • 4 Nights',
-          tag: 'Train',
-          stay: 'Galle Fort Hotel',
-          stayInfo: '4.8 Rating • Luxury',
-          icon: Icons.star,
-          iconColor: AppColors.warning,
-          mapImage:
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuDm1yuBYmTDFQXSdJ5oY7adXaSdEprS3H9b7yNhf1y7_Mw3x00_qDGva_Skiyd5rRa9h3U6lvn14dhkfx49cq6hZgNq7cBfk0ak9WeqeBBOIzui84rUaUb_j2RUC6WOMNVdZuuSzgaD2RYlKIPwcn385JP3IAnuWjjCXTaiunUApJvrqctasDDPoXw7idoU4cDnheMlwepmJgKMKMIm-BFY7rG8RpukrHI1yYJegoUusEmfvKNB86lhXHLo8yv7_2OpJIL5JJO3ap4',
-          mapTagIcon: Icons.location_on,
-        ),
-        const SizedBox(height: 16),
-        _buildTimelineItem(
-          context: context,
-          index: '3',
-          title: 'Yala Park',
-          subtitle: 'Oct 19 - Oct 22 • 3 Nights',
-          tag: 'Bus',
-          stay: 'Yala Safari Hotel',
-          stayInfo: 'Breakfast Included',
-          icon: Icons.restaurant,
-          mapImage:
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuDHFLKxxt40evY_6SUhDldGSvg4u2kQLD5NoIGPcCmQwMEzG89kuh8-rHzKH5YKRzkeITCAuGh7r_se4dQClJQQaJ61euxF3QuUPvqCFFiSIoEjdP6-PNBcEzzIIPfxfz6pG8VL48Ed9nq-lKCPlksh3oDHY0SJohpO4GycNQQmfMWSCWltssq9BNrdOkJ6MzIaHI7E6aSpow98cF73wsMoUXxbryDm3NLsIRb68i2HbXnmve9CCk8_lC0J5ewSms2DMTteIRfT3e8',
-          mapTagIcon: Icons.location_on,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          'Itinerary',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        Container(
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight10,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Center(
-            child: Text(
-              'Edit Plan',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildTimelineItem({
     required BuildContext context,
-    required String index,
-    required String title,
-    required String subtitle,
-    required String tag,
-    required String stay,
-    required String stayInfo,
-    required IconData icon,
-    Color? iconColor,
-    required String mapImage,
-    required IconData mapTagIcon,
+    required TripItem item,
+    required bool isLast,
+    required int itemIndex,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => Navigator.pushNamed(context, '/place-details'),
-        borderRadius: BorderRadius.circular(16),
+    return ReorderableDelayedDragStartListener(
+      index: itemIndex,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showEditDestinationDialog(item, itemIndex),
+          borderRadius: BorderRadius.circular(16),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Column(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: index == '1'
-                      ? AppColors.primary
-                      : AppColors.surface,
-                  foregroundColor: index == '1'
-                      ? AppColors.textOnPrimary
-                      : AppColors.primary,
-                  child: Text(
-                    index,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+            Align(
+              alignment: Alignment.topCenter,
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: item.index == 1
+                        ? AppColors.primary
+                        : AppColors.surface,
+                    foregroundColor: item.index == 1
+                        ? AppColors.textOnPrimary
+                        : AppColors.primary,
+                    child: Text(
+                      item.index.toString(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Container(width: 2, height: 80, color: AppColors.divider),
-              ],
+                  if (!isLast) ...[
+                    const SizedBox(height: 16),
+                    Container(width: 2, height: 80, color: AppColors.divider),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -206,7 +544,7 @@ class TravoAdventurePage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            title,
+                            item.title,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -214,7 +552,7 @@ class TravoAdventurePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            subtitle,
+                            item.subtitle,
                             style: const TextStyle(
                               fontSize: 10,
                               color: AppColors.textSecondary,
@@ -228,11 +566,11 @@ class TravoAdventurePage extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight10,
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          tag.toUpperCase(),
+                          item.tag.toUpperCase(),
                           style: const TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
@@ -265,7 +603,7 @@ class TravoAdventurePage extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                stay,
+                                item.stay,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
@@ -275,16 +613,16 @@ class TravoAdventurePage extends StatelessWidget {
                               Row(
                                 children: [
                                   Icon(
-                                    icon,
+                                    item.icon,
                                     size: 14,
-                                    color: iconColor ?? AppColors.primary,
+                                    color: item.iconColor ?? AppColors.primary,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    stayInfo,
+                                    item.stayInfo,
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: iconColor ?? AppColors.primary,
+                                      color: item.iconColor ?? AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -296,7 +634,17 @@ class TravoAdventurePage extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       InkWell(
-                        onTap: () => Navigator.pushNamed(context, '/map'),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/map',
+                            arguments: {
+                              'tripItems': _currentTripItems,
+                              'selectedIndex': itemIndex,
+                              'tripName': _selectedTrip.name,
+                            },
+                          );
+                        },
                         borderRadius: BorderRadius.circular(14),
                         child: Container(
                           width: 80,
@@ -305,7 +653,7 @@ class TravoAdventurePage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: AppColors.divider),
                             image: DecorationImage(
-                              image: NetworkImage(mapImage),
+                              image: NetworkImage(item.mapImage),
                               fit: BoxFit.cover,
                               opacity: 0.6,
                             ),
@@ -316,8 +664,8 @@ class TravoAdventurePage extends StatelessWidget {
                               backgroundColor: AppColors.surface.withValues(
                                 alpha: 0.7,
                               ),
-                              child: Icon(
-                                mapTagIcon,
+                              child: const Icon(
+                                Icons.location_on,
                                 size: 16,
                                 color: AppColors.primary,
                               ),
@@ -330,9 +678,423 @@ class TravoAdventurePage extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.drag_handle,
+              color: AppColors.textSecondary,
+              size: 20,
+            ),
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  void _showEditDestinationDialog(TripItem item, int itemIndex) {
+    final nightsController = TextEditingController(text: item.nights.toString());
+    final budgetController = TextEditingController(text: item.budget.toStringAsFixed(2));
+    String selectedPriority = item.priority;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          item.icon,
+                          color: item.iconColor ?? AppColors.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  size: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    item.location,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // AI Summary Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.auto_awesome,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'AI Summary',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          item.aiSummary,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Nights Field
+                  const Text(
+                    'Nights',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nightsController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Number of nights',
+                      prefixIcon: const Icon(Icons.hotel, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Priority Field
+                  const Text(
+                    'Priority',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      value: selectedPriority,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.flag, size: 20),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      items: ['Low', 'Medium', 'High'].map((priority) {
+                        Color priorityColor = priority == 'High'
+                            ? Colors.red
+                            : priority == 'Medium'
+                                ? AppColors.warning
+                                : Colors.green;
+                        
+                        return DropdownMenuItem(
+                          value: priority,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: priorityColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(priority),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setDialogState(() {
+                            selectedPriority = value;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Budget Field
+                  const Text(
+                    'Budget',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: budgetController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      hintText: 'Budget amount',
+                      prefixIcon: const Icon(Icons.attach_money, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: const BorderSide(color: AppColors.divider),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final nights = int.tryParse(nightsController.text) ?? item.nights;
+                            final budget = double.tryParse(budgetController.text) ?? item.budget;
+                            
+                            setState(() {
+                              _currentTripItems[itemIndex].nights = nights;
+                              _currentTripItems[itemIndex].priority = selectedPriority;
+                              _currentTripItems[itemIndex].budget = budget;
+                              _currentTripItems[itemIndex].subtitle = 
+                                  '${item.subtitle.split('•')[0].trim()} • $nights ${nights == 1 ? 'Night' : 'Nights'}';
+                            });
+                            
+                            Navigator.pop(context);
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${item.title} updated successfully!'),
+                                backgroundColor: Colors.green,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textOnPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditTripNameDialog() {
+    final TextEditingController nameController = TextEditingController(
+      text: _selectedTrip.name,
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Edit Trip Name',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          content: TextField(
+            controller: nameController,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Enter trip name',
+              hintStyle: const TextStyle(color: AppColors.textDisabled),
+              filled: true,
+              fillColor: AppColors.surfaceLight,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.divider),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.divider),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final newName = nameController.text.trim();
+                if (newName.isNotEmpty) {
+                  setState(() {
+                    _selectedTrip = SavedTrip(
+                      id: _selectedTrip.id,
+                      name: newName,
+                      dates: _selectedTrip.dates,
+                      duration: _selectedTrip.duration,
+                      imageUrl: _selectedTrip.imageUrl,
+                      destinations: _selectedTrip.destinations,
+                      itinerary: _selectedTrip.itinerary,
+                    );
+                    
+                    // Update the trip data service with new name
+                    _updateTripService();
+                  });
+                  Navigator.pop(context);
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Trip name updated successfully!'),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textOnPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

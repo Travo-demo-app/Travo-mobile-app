@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
+import '../data/recommendations_data.dart';
+import 'place_details_page.dart';
 
 class TravoRecommendationsPage extends StatelessWidget {
   const TravoRecommendationsPage({super.key});
@@ -156,209 +158,228 @@ class TravoRecommendationsPage extends StatelessWidget {
 
   // ---------------- BOTTOM SHEET ----------------
   Widget _bottomSheet(BuildContext context) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: MediaQuery.of(context).size.height * 0.88,
-      child: Container(
-        padding: const EdgeInsets.only(top: 12),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 40,
-              height: 6,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Top Picks for You',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Based on your recent interests',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  CircleAvatar(
-                    backgroundColor: AppColors.surfaceLight,
-                    child: const Icon(
-                      Icons.tune,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 140),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 24,
-                  crossAxisSpacing: 24,
-                  childAspectRatio: 3 / 5,
-                ),
-                itemCount: _demoRecommendations.length,
-                itemBuilder: (_, index) =>
-                    _card(context, _demoRecommendations[index]),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return _DraggableRecommendationsSheet();
   }
+}
 
-  // ---------------- CARD ----------------
-  Widget _card(BuildContext context, RecommendationItem item) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, '/place-details');
+class _DraggableRecommendationsSheet extends StatefulWidget {
+  const _DraggableRecommendationsSheet();
+
+  @override
+  State<_DraggableRecommendationsSheet> createState() =>
+      _DraggableRecommendationsSheetState();
+}
+
+class _DraggableRecommendationsSheetState
+    extends State<_DraggableRecommendationsSheet> {
+  bool _isDismissing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<DraggableScrollableNotification>(
+      onNotification: (notification) {
+        if (notification.extent <= 0.3 && !_isDismissing && mounted) {
+          _isDismissing = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          });
+        }
+        return true;
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.88,
+        minChildSize: 0.1,
+        maxChildSize: 0.88,
+        snap: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+            ),
+            child: Column(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.network(
-                    item.imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: CircleAvatar(
-                    backgroundColor: AppColors.textPrimary.withValues(
-                      alpha: 0.25,
-                    ),
-                    child: const Icon(
-                      Icons.favorite_border,
-                      color: AppColors.textOnPrimary,
+                Container(
+                  padding: const EdgeInsets.only(top: 12, bottom: 12),
+                  color: Colors.transparent,
+                  width: double.infinity,
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
                   ),
                 ),
-                Positioned(
-                  bottom: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.star,
-                          size: 14,
-                          color: AppColors.warning,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Top Picks for You',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Based on your recent interests',
+                              style: TextStyle(color: AppColors.textSecondary),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          item.rating,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
+                      ),
+                      CircleAvatar(
+                        backgroundColor: AppColors.surfaceLight,
+                        child: const Icon(
+                          Icons.tune,
+                          color: AppColors.textSecondary,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 140),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 1.0,
                     ),
+                    itemCount: recommendationsData.length,
+                    itemBuilder: (_, index) {
+                      final item = recommendationsData[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TravoPlaceDetailsPage(
+                                title: item.title,
+                                location: item.location,
+                                imageUrl: item.imageUrl,
+                                rating: item.rating,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Image.network(
+                                      item.imageUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: CircleAvatar(
+                                      backgroundColor:
+                                          AppColors.textPrimary.withValues(
+                                        alpha: 0.25,
+                                      ),
+                                      child: const Icon(
+                                        Icons.favorite_border,
+                                        color: AppColors.textOnPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 8,
+                                    left: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            AppColors.surface.withValues(alpha: 0.85),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.star,
+                                            size: 14,
+                                            color: AppColors.warning,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            item.rating.toString(),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  size: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    item.location,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            item.title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on,
-                size: 14,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  item.location,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
-
-class RecommendationItem {
-  final String imageUrl;
-  final String title;
-  final String location;
-  final String rating;
-
-  const RecommendationItem({
-    required this.imageUrl,
-    required this.title,
-    required this.location,
-    required this.rating,
-  });
-}
-
-const List<RecommendationItem> _demoRecommendations = [
-  RecommendationItem(
-    imageUrl:
-        'https://lh3.googleusercontent.com/aida-public/AB6AXuACWWMzHvuZzWYuq1tXXagREhlC4eFYSN67pYXS1Fh-VIgi6E_iPGL79hIZXhrE7lRYANDqW7dxWoVzHWUWMN8nvJ7aHZu472KTY3xe-ksoaxHVwSeO27EeQTYQLijcQfYBD0R2qEhZ4JTESoYvPdC23iDE6HENi4130TKKzIw5DS9CbqPObBVyAX7j6S083Uji6qqVfwyoatBAz0uEusqmgAu5djpbNoLH3KI5m2kNqFOuF6xw8Ig8nVX-ImTw1qacVTo0MGyqyJY',
-    title: 'Mirissa Beach',
-    location: 'Galle Road, Mirissa',
-    rating: '4.8',
-  ),
-  RecommendationItem(
-    imageUrl:
-        'https://lh3.googleusercontent.com/aida-public/AB6AXuD2c69Wp7sacY9G9gy1jwH_POZYVbH6oyyvf8uuFoU3xpGRt660cs9FGG7pYqMnyv-Rw5YDB_s0EG0U4EpzlAoD6ScxS6yZtwWJ37y8h13Bk1qVXl8r7xI7s9C87qpY4giQ7JKdtFucyzdAGQUxj34a0xFZ2CDFQCewdqCzNPMiBaycTtfSiLjwG6RvOcfW6FcMSw9NuGee3wiNJlTD3UqrVEOmlemjLSxOJuia7ZfDkm778EDEr2hh-MCTmYa2HkLCZvH3Fo2JJ8w',
-    title: 'Yala Park',
-    location: 'Darma Valley',
-    rating: '4.5',
-  ),
-];

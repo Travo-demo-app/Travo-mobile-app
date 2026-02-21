@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
 import '../core/widgets/shared_bottom_nav_bar.dart';
+import '../data/adventure_data.dart';
 
 class StoryDetailsPage extends StatefulWidget {
-  final String tripTitle;
+  final SavedTrip trip;
 
   const StoryDetailsPage({
     super.key,
-    this.tripTitle = "Sri Lanka Trip",
+    required this.trip,
   });
 
   @override
@@ -29,7 +30,7 @@ class _StoryDetailsPageState extends State<StoryDetailsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.tripTitle,
+          widget.trip.name,
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -72,18 +73,36 @@ class _StoryDetailsPageState extends State<StoryDetailsPage> {
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildDestinationCard("Galle", 0),
-                const SizedBox(height: 24),
-                _buildConnectorLine(0),
-                const SizedBox(height: 24),
-                _buildDestinationCard("Mirissa", 1),
-                const SizedBox(height: 24),
-                _buildConnectorLine(1),
-                const SizedBox(height: 24),
-                _buildDestinationCard("Yala", 2),
-                const SizedBox(height: 100),
-              ]),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final actualIndex = index ~/ 2;
+                  final isCard = index % 2 == 0;
+                  
+                  if (isCard) {
+                    if (actualIndex >= widget.trip.itinerary.length) {
+                      return const SizedBox(height: 100);
+                    }
+                    return _buildDestinationCard(
+                      widget.trip.itinerary[actualIndex].title,
+                      actualIndex,
+                    );
+                  } else {
+                    if (actualIndex >= widget.trip.itinerary.length - 1) {
+                      return null;
+                    }
+                    return Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        _buildConnectorLine(actualIndex),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  }
+                },
+                childCount: widget.trip.itinerary.isEmpty 
+                    ? 1 
+                    : (widget.trip.itinerary.length * 2),
+              ),
             ),
           ),
         ],
