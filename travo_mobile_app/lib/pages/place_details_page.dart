@@ -2,9 +2,28 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
+import '../data/nearby_places_data.dart';
+import '../data/explore_categories_data.dart';
+import '../core/services/trip_data_service.dart';
+import 'explore_category_page.dart';
+import 'place_group_chat_page.dart';
+import 'place_reviews_page.dart';
 
 class TravoPlaceDetailsPage extends StatelessWidget {
-  const TravoPlaceDetailsPage({super.key});
+  final String title;
+  final String location;
+  final String imageUrl;
+  final double rating;
+  final String? description;
+
+  const TravoPlaceDetailsPage({
+    super.key,
+    required this.title,
+    required this.location,
+    required this.imageUrl,
+    required this.rating,
+    this.description,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +51,7 @@ class TravoPlaceDetailsPage extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.network(
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuCTkH8r72U4822Oo5KKbhV7JaZqL4ZoJsFzGEH1SthikJlRao9RgnGe6WB6eZS-UmHBUQqXwp5YOVFX-dva4wJ08MHrkSrOeuJmbei7LRHE6nMgzqrFd9_0YSAOoCbAf6Qm7EIBhyjJwvH4EKy9XzKk3ssVua-Ml03ZaFTf6nQ33EhC3Mp_tQoxlizt-mSwpAUwiyDBP3aY-2yXc8vBaOv7Wi7WYgN_aFb-ti_6hTTPQt0k54h_nltGJJ7m8NXRm5w1BqaWvF6fW90',
+            imageUrl,
             fit: BoxFit.cover,
           ),
           Container(
@@ -84,9 +103,9 @@ class TravoPlaceDetailsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Mirissa Beach',
-                        style: TextStyle(
+                      Text(
+                        title,
+                        style: const TextStyle(
                           color: AppColors.textOnPrimary,
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -94,16 +113,16 @@ class TravoPlaceDetailsPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Row(
-                        children: const [
-                          Icon(
+                        children: [
+                          const Icon(
                             Icons.location_on,
                             size: 16,
                             color: Colors.white70,
                           ),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
-                            'Galle Road, Mirissa',
-                            style: TextStyle(color: Colors.white70),
+                            location,
+                            style: const TextStyle(color: Colors.white70),
                           ),
                         ],
                       ),
@@ -120,12 +139,12 @@ class TravoPlaceDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
-                    children: const [
-                      Icon(Icons.star, size: 16, color: AppColors.warning),
-                      SizedBox(width: 4),
+                    children: [
+                      const Icon(Icons.star, size: 16, color: AppColors.warning),
+                      const SizedBox(width: 4),
                       Text(
-                        '4.7',
-                        style: TextStyle(
+                        rating.toString(),
+                        style: const TextStyle(
                           color: AppColors.textOnPrimary,
                           fontWeight: FontWeight.bold,
                         ),
@@ -176,10 +195,10 @@ class TravoPlaceDetailsPage extends StatelessWidget {
           Text.rich(
             TextSpan(
               children: [
-                const TextSpan(
-                  text:
-                      'Known as the Kashmir of Bengal, Niladri Lake offers breathtaking views of limestone hills and crystal clear blue water. A perfect serenity escape for nature lovers. ',
-                  style: TextStyle(color: AppColors.textSecondary, height: 1.6),
+                TextSpan(
+                  text: description ??
+                      'Discover the beauty and charm of this amazing destination. Experience unforgettable moments and create lasting memories in this wonderful place. ',
+                  style: const TextStyle(color: AppColors.textSecondary, height: 1.6),
                 ),
                 const TextSpan(
                   text: 'Read more',
@@ -196,7 +215,7 @@ class TravoPlaceDetailsPage extends StatelessWidget {
             'Explore',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           LayoutBuilder(
             builder: (context, constraints) {
               final exploreItems = [
@@ -205,42 +224,106 @@ class TravoPlaceDetailsPage extends StatelessWidget {
                   label: 'Overview',
                   color: Colors.blue,
                 ),
-                const _ExploreItem(
+                _ExploreItem(
                   icon: Icons.bed,
                   label: 'Stays',
                   color: Colors.orange,
+                  onTap: () {
+                    final categoryData = exploreCategoriesMap['Stays'];
+                    if (categoryData != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ExploreCategoryPage(categoryData: categoryData),
+                        ),
+                      );
+                    }
+                  },
                 ),
                 _ExploreItem(
                   icon: Icons.restaurant,
                   label: 'Food',
                   color: Colors.green,
-                  onTap: () => Navigator.pushNamed(context, '/food-dining'),
+                  onTap: () {
+                    final categoryData = exploreCategoriesMap['Food'];
+                    if (categoryData != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ExploreCategoryPage(categoryData: categoryData),
+                        ),
+                      );
+                    }
+                  },
                 ),
-                const _ExploreItem(
+                _ExploreItem(
                   icon: Icons.kayaking,
                   label: 'Activities',
                   color: Colors.purple,
+                  onTap: () {
+                    final categoryData = exploreCategoriesMap['Activities'];
+                    if (categoryData != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ExploreCategoryPage(categoryData: categoryData),
+                        ),
+                      );
+                    }
+                  },
                 ),
                 const _ExploreItem(
                   icon: Icons.medical_services,
                   label: 'Essentials',
                   color: Colors.red,
                 ),
-                const _ExploreItem(
+                _ExploreItem(
                   icon: Icons.groups,
                   label: 'Groups',
                   color: Colors.teal,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlaceGroupChatPage(
+                          placeName: title,
+                          placeImage: imageUrl,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                const _ExploreItem(
+                _ExploreItem(
                   icon: Icons.reviews,
                   label: 'Reviews',
                   color: Colors.amber,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlaceReviewsPage(
+                          placeName: title,
+                          placeRating: rating,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 _ExploreItem(
                   icon: Icons.commute,
                   label: 'Transport',
                   color: Colors.indigo,
-                  onTap: () => Navigator.pushNamed(context, '/transportation'),
+                  onTap: () {
+                    final categoryData = exploreCategoriesMap['Transport'];
+                    if (categoryData != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ExploreCategoryPage(categoryData: categoryData),
+                        ),
+                      );
+                    }
+                  },
                 ),
               ];
               final crossAxisCount = constraints.maxWidth < 360 ? 3 : 4;
@@ -260,70 +343,28 @@ class TravoPlaceDetailsPage extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight10,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.schedule,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'DURATION',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        Text(
-                          '3 Days, 2 Nights',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: const [
-                    Text(
-                      'FROM',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Text(
-                      '\$450',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          const SizedBox(height: 24),
+          const Text(
+            'Nearby Places',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 220,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: nearbyPlacesMap[title]?.length ?? defaultNearbyPlaces.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final places = nearbyPlacesMap[title] ?? defaultNearbyPlaces;
+                final place = places[index];
+                return _NearbyPlaceCard(
+                  imageUrl: place.imageUrl,
+                  title: place.title,
+                  location: place.location,
+                  rating: place.rating,
+                );
+              },
             ),
           ),
         ],
@@ -349,22 +390,92 @@ class TravoPlaceDetailsPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: SizedBox(
+                        height: 56,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          onPressed: () {
+                            // Add to itinerary functionality
+                            final tripService = TripDataService();
+                            
+                            if (!tripService.hasCurrentTrip) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please select a trip first in the Plans tab'),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                              return;
+                            }
+                            
+                            // Create new trip item from place details
+                            final newDestination = tripService.createTripItemFromPlace(
+                              title: title,
+                              location: location,
+                              imageUrl: imageUrl,
+                              rating: rating,
+                            );
+                            
+                            // Add to current trip
+                            tripService.addDestination(newDestination);
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('$title added to ${tripService.currentTripName}'),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 2),
+                                action: SnackBarAction(
+                                  label: 'VIEW',
+                                  textColor: AppColors.accent,
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/adventure');
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add_location, size: 20),
+                          label: const Text(
+                            'Add to Itinerary',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/ai-chat');
-                    },
-                    icon: const Icon(Icons.add_location),
-                    label: const Text('Add location to itinerary'),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: SizedBox(
+                        height: 56,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primary, width: 2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/ai-chat');
+                          },
+                          icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                          label: const Text(
+                            'Chat',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 Container(
@@ -427,6 +538,143 @@ class _ExploreItem extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NearbyPlaceCard extends StatelessWidget {
+  final String imageUrl;
+  final String title;
+  final String location;
+  final double rating;
+
+  const _NearbyPlaceCard({
+    required this.imageUrl,
+    required this.title,
+    required this.location,
+    required this.rating,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TravoPlaceDetailsPage(
+              title: title,
+              location: location,
+              imageUrl: imageUrl,
+              rating: rating,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: AppColors.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image
+          Stack(
+            children: [
+              Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  image: DecorationImage(
+                    image: NetworkImage(imageUrl),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, color: AppColors.warning, size: 14),
+                      const SizedBox(width: 2),
+                      Text(
+                        rating.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      size: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 2),
+                    Expanded(
+                      child: Text(
+                        location,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
     );
   }
 }

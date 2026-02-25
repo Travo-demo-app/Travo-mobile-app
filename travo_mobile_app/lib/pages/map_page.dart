@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
 import '../core/widgets/shared_bottom_nav_bar.dart';
+import '../data/adventure_data.dart';
+import '../core/services/trip_data_service.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -12,48 +14,65 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _showPlaceDetails = false;
-  String _selectedPlaceName = '';
-  String _selectedPlaceAddress = '';
+  int _selectedLocationIndex = 0;
+  List<TripItem> _tripItems = [];
+  String _tripName = '';
 
-  final List<_MapLocation> _locations = const [
-    _MapLocation(
-      name: 'Louvre Museum',
-      address: 'Musee du Louvre, 75001 Paris, France',
-      dx: 0.52,
-      dy: 0.46,
-    ),
-    _MapLocation(
-      name: 'Eiffel Tower',
-      address: 'Champ de Mars, 75007 Paris, France',
-      dx: 0.38,
-      dy: 0.62,
-    ),
-    _MapLocation(
-      name: 'Notre-Dame',
-      address: '6 Parvis Notre-Dame, 75004 Paris, France',
-      dx: 0.62,
-      dy: 0.55,
-    ),
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Get arguments passed from adventure page
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    
+    if (arguments != null) {
+      setState(() {
+        _tripItems = arguments['tripItems'] as List<TripItem>? ?? [];
+        _selectedLocationIndex = arguments['selectedIndex'] as int? ?? 0;
+        _tripName = arguments['tripName'] as String? ?? 'Trip Map';
+        _showPlaceDetails = true;
+        
+        // Also update the service when navigating from destination card
+        TripDataService().updateCurrentTrip(
+          tripItems: _tripItems,
+          tripName: _tripName,
+          selectedIndex: _selectedLocationIndex,
+        );
+      });
+    } else {
+      // If no arguments provided (navigated from bottom nav), use TripDataService
+      final tripService = TripDataService();
+      if (tripService.hasCurrentTrip) {
+        setState(() {
+          _tripItems = tripService.currentTripItems;
+          _selectedLocationIndex = tripService.selectedIndex;
+          _tripName = tripService.currentTripName;
+          _showPlaceDetails = false; // Don't auto-show bottom sheet from nav
+        });
+      }
+    }
+  }
 
-  void _onLocationTapped(_MapLocation location) {
+  void _onLocationTapped(int index) {
     setState(() {
-      _selectedPlaceName = location.name;
-      _selectedPlaceAddress = location.address;
+      _selectedLocationIndex = index;
       _showPlaceDetails = true;
+      
+      // Update the service's selected index
+      TripDataService().updateSelectedIndex(index);
     });
   }
 
   void _centerCamera() {
-    // Dummy overview: no live map control
+    // Dummy: no live map control
   }
 
   void _zoomIn() {
-    // Dummy overview: no live map control
+    // Dummy: no live map control
   }
 
   void _zoomOut() {
-    // Dummy overview: no live map control
+    // Dummy: no live map control
   }
 
   @override
@@ -67,45 +86,115 @@ class _MapPageState extends State<MapPage> {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final maxSheetHeight = MediaQuery.of(context).size.height * 0.45;
 
+    // Calculate map center and bounds if we have trip items
+    String mapUrl = 'https://tile.openstreetmap.org/14/8398/5870.png'; // Default Paris view
+    
+    if (_tripItems.isNotEmpty) {
+      // Calculate center point
+      double avgLat = _tripItems.map((e) => e.latitude).reduce((a, b) => a + b) / _tripItems.length;
+      double avgLng = _tripItems.map((e) => e.longitude).reduce((a, b) => a + b) / _tripItems.length;
+      
+      // Determine zoom level based on spread
+      double latSpread = _tripItems.map((e) => e.latitude).reduce((a, b) => a > b ? a : b) - 
+                         _tripItems.map((e) => e.latitude).reduce((a, b) => a < b ? a : b);
+      double lngSpread = _tripItems.map((e) => e.longitude).reduce((a, b) => a > b ? a : b) - 
+                         _tripItems.map((e) => e.longitude).reduce((a, b) => a < b ? a : b);
+      
+      int zoom = latSpread > 5 || lngSpread > 5 ? 5 : (latSpread > 2 || lngSpread > 2 ? 7 : 10);
+      
+      // Use StaticMap API (free, no token required)
+      mapUrl = 'https://staticmap.openstreetmap.de/staticmap.php?center=$avgLat,$avgLng&zoom=$zoom&size=600x1200&maptype=mapnik';
+    }
+
     return Scaffold(
       body: Stack(
         children: [
-          // Static map background (dummy overview)
+          // Static map background
           Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              image: DecorationImage(
-                image: const NetworkImage(
-                  'https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/2.3376,48.8606,13,0/600x1200?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
+            color: const Color(0xFFE5E3DF), // Light map-like background
+            child: Image.network(
+              mapUrl,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
+                    color: AppColors.primary,
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: const Color(0xFFE5E3DF),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.map,
+                          size: 64,
+                          color: AppColors.textDisabled,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Map Loading...',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Map overlay with route path
+          if (_tripItems.length > 1)
+            IgnorePointer(
+              child: CustomPaint(
+                size: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height,
                 ),
-                fit: BoxFit.cover,
-                onError: (exception, stackTrace) {},
+                painter: _MapPathPainter(
+                  tripItems: _tripItems,
+                  selectedIndex: _selectedLocationIndex,
+                ),
               ),
             ),
-          ),
 
-          // Map overlay with route path illustration
-          IgnorePointer(
-            child: CustomPaint(
-              size: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height,
-              ),
-              painter: _MapPathPainter(),
-            ),
-          ),
-
-          // Red location pins (tap to open details)
-          ..._locations.map((location) {
-            final size = MediaQuery.of(context).size;
+          // Location pins for each destination
+          ..._tripItems.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            final isSelected = index == _selectedLocationIndex;
+            
+            // Convert lat/lng to screen position (simplified)
+            final screenPos = _latLngToScreenPosition(
+              item.latitude,
+              item.longitude,
+              _tripItems,
+              MediaQuery.of(context).size,
+            );
+            
             return Positioned(
-              left: size.width * location.dx - 16,
-              top: size.height * location.dy - 32,
+              left: screenPos.dx - 20,
+              top: screenPos.dy - 40,
               child: GestureDetector(
-                onTap: () => _onLocationTapped(location),
-                child: const _MapPin(),
+                onTap: () => _onLocationTapped(index),
+                child: _MapPin(
+                  isSelected: isSelected,
+                  label: '${index + 1}',
+                ),
               ),
             );
           }),
@@ -208,9 +297,11 @@ class _MapPageState extends State<MapPage> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Text(
-                          'Route: High traffic on Blvd Malesherbes',
-                          style: TextStyle(
+                        Text(
+                          _tripItems.isNotEmpty 
+                              ? 'Route: $_tripName - ${_tripItems.length} destinations'
+                              : 'Route: High traffic on Blvd Malesherbes',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -246,15 +337,15 @@ class _MapPageState extends State<MapPage> {
           ),
 
           // Bottom Place Details Sheet (opens on pin tap)
-          if (_showPlaceDetails)
+          if (_showPlaceDetails && _tripItems.isNotEmpty)
             Positioned(
               left: 0,
               right: 0,
               bottom: 80 + bottomInset - 8,
               child: _PlaceDetailsBottomSheet(
                 maxHeight: maxSheetHeight,
-                placeName: _selectedPlaceName,
-                placeAddress: _selectedPlaceAddress,
+                tripItem: _tripItems[_selectedLocationIndex],
+                itemNumber: _selectedLocationIndex + 1,
                 onClose: () {
                   setState(() {
                     _showPlaceDetails = false;
@@ -267,42 +358,97 @@ class _MapPageState extends State<MapPage> {
       bottomNavigationBar: const SharedBottomNavBar(activeRoute: '/map'),
     );
   }
-}
 
-class _MapLocation {
-  final String name;
-  final String address;
-  final double dx;
-  final double dy;
-
-  const _MapLocation({
-    required this.name,
-    required this.address,
-    required this.dx,
-    required this.dy,
-  });
+  // Convert latitude/longitude to screen position
+  Offset _latLngToScreenPosition(
+    double lat,
+    double lng,
+    List<TripItem> allItems,
+    Size screenSize,
+  ) {
+    if (allItems.isEmpty) return Offset(screenSize.width / 2, screenSize.height / 2);
+    
+    // Calculate bounds
+    double minLat = allItems.map((e) => e.latitude).reduce((a, b) => a < b ? a : b);
+    double maxLat = allItems.map((e) => e.latitude).reduce((a, b) => a > b ? a : b);
+    double minLng = allItems.map((e) => e.longitude).reduce((a, b) => a < b ? a : b);
+    double maxLng = allItems.map((e) => e.longitude).reduce((a, b) => a > b ? a : b);
+    
+    // Add padding
+    double latPadding = (maxLat - minLat) * 0.2;
+    double lngPadding = (maxLng - minLng) * 0.2;
+    
+    // Normalize to 0-1 range
+    double dx = (lng - minLng + lngPadding) / (maxLng - minLng + 2 * lngPadding);
+    double dy = 1 - (lat - minLat + latPadding) / (maxLat - minLat + 2 * latPadding);
+    
+    // Convert to screen coordinates with margins
+    double marginTop = 200;
+    double marginBottom = 500;
+    double marginSide = 40;
+    
+    double x = marginSide + dx * (screenSize.width - 2 * marginSide);
+    double y = marginTop + dy * (screenSize.height - marginTop - marginBottom);
+    
+    return Offset(x, y);
+  }
 }
 
 class _MapPin extends StatelessWidget {
-  const _MapPin();
+  final bool isSelected;
+  final String label;
+
+  const _MapPin({
+    required this.isSelected,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: AppColors.error,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.error.withValues(alpha: 0.35),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: isSelected ? 44 : 36,
+          height: isSelected ? 44 : 36,
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.error,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white,
+              width: isSelected ? 3 : 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (isSelected ? AppColors.primary : AppColors.error)
+                    .withValues(alpha: 0.4),
+                blurRadius: isSelected ? 15 : 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: const Icon(Icons.location_on, color: Colors.white, size: 18),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSelected ? 16 : 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        if (isSelected)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            width: 4,
+            height: 8,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -343,14 +489,14 @@ class _MapControlButton extends StatelessWidget {
 class _PlaceDetailsBottomSheet extends StatelessWidget {
   final VoidCallback onClose;
   final double maxHeight;
-  final String placeName;
-  final String placeAddress;
+  final TripItem tripItem;
+  final int itemNumber;
 
   const _PlaceDetailsBottomSheet({
     required this.onClose,
     required this.maxHeight,
-    required this.placeName,
-    required this.placeAddress,
+    required this.tripItem,
+    required this.itemNumber,
   });
 
   @override
@@ -393,91 +539,121 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Place Info
+                        // Destination Info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Recommended Badge and Rating
                               Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
+                                      horizontal: 8,
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.surfaceLight,
+                                      color: AppColors.primary,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      'RECOMMENDED',
-                                      style: TextStyle(
-                                        color: AppColors.textSecondary,
+                                      'Stop $itemNumber',
+                                      style: const TextStyle(
+                                        color: Colors.white,
                                         fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.5,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Icon(
-                                    Icons.star,
-                                    color: Color(0xFFFFC107),
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '4.9',
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      tripItem.tag.toUpperCase(),
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
-
-                              // Place Name
+                              const SizedBox(height: 10),
                               Text(
-                                placeName.isEmpty
-                                    ? 'Selected Place'
-                                    : placeName,
-                                style: TextStyle(
+                                tripItem.title,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                               const SizedBox(height: 6),
-
-                              // Address
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      tripItem.location,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    tripItem.icon,
+                                    size: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    tripItem.stay,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
                               Text(
-                                placeAddress.isEmpty
-                                    ? 'Tap a pin to view details'
-                                    : placeAddress,
-                                style: TextStyle(
+                                tripItem.stayInfo,
+                                style: const TextStyle(
+                                  fontSize: 12,
                                   color: AppColors.textSecondary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],
                           ),
                         ),
 
-                        // Place Image
+                        // Destination Image
                         Container(
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
                             color: AppColors.surfaceLight,
                             borderRadius: BorderRadius.circular(12),
-                            image: const DecorationImage(
-                              image: NetworkImage(
-                                'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=300',
-                              ),
+                            image: DecorationImage(
+                              image: NetworkImage(tripItem.mapImage),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -487,7 +663,7 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // Duration and Distance
+                    // Duration and Budget
                     Row(
                       children: [
                         // Duration
@@ -498,36 +674,34 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                               Row(
                                 children: [
                                   Icon(
-                                    Icons.access_time,
-                                    color: AppColors.textDisabled,
-                                    size: 18,
+                                    Icons.nights_stay,
+                                    size: 16,
+                                    color: AppColors.textSecondary,
                                   ),
                                   const SizedBox(width: 6),
-                                  Text(
-                                    'DURATION',
+                                  const Text(
+                                    'Duration',
                                     style: TextStyle(
-                                      color: AppColors.textDisabled,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '12 mins',
-                                style: TextStyle(
+                                '${tripItem.nights} ${tripItem.nights == 1 ? 'Night' : 'Nights'}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ],
                           ),
                         ),
 
-                        // Distance
+                        // Budget
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,29 +709,27 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                               Row(
                                 children: [
                                   Icon(
-                                    Icons.directions_car,
-                                    color: AppColors.textDisabled,
-                                    size: 18,
+                                    Icons.attach_money,
+                                    size: 16,
+                                    color: AppColors.textSecondary,
                                   ),
                                   const SizedBox(width: 6),
-                                  Text(
-                                    'DISTANCE',
+                                  const Text(
+                                    'Budget',
                                     style: TextStyle(
-                                      color: AppColors.textDisabled,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '3.4 miles',
-                                style: TextStyle(
+                                '\$${tripItem.budget.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ],
@@ -571,29 +743,31 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                     // Action Buttons
                     Row(
                       children: [
-                        // Start Navigation Button
+                        // View Details Button
                         Expanded(
                           flex: 2,
                           child: ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
                             icon: const Icon(
-                              Icons.navigation,
-                              color: AppColors.textOnPrimary,
+                              Icons.info_outline,
+                              color: Colors.white,
                               size: 20,
                             ),
                             label: const Text(
-                              'Start Navigation',
+                              'View Details',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF006064),
-                              foregroundColor: AppColors.textOnPrimary,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               elevation: 0,
                             ),
@@ -601,43 +775,33 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
 
-                        // Save Button
+                        // Close Button
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: onClose,
                             icon: Icon(
-                              Icons.bookmark_border,
-                              color: AppColors.textPrimary,
+                              Icons.close,
+                              color: AppColors.textSecondary,
                               size: 20,
                             ),
                             label: Text(
-                              'Save',
+                              'Close',
                               style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                             style: OutlinedButton.styleFrom(
-                              backgroundColor: AppColors.surfaceLight,
-                              side: BorderSide.none,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: AppColors.divider),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: onClose,
-                        icon: const Icon(Icons.close, size: 18),
-                        label: const Text('Close'),
-                      ),
                     ),
                   ],
                 ),
@@ -650,79 +814,108 @@ class _PlaceDetailsBottomSheet extends StatelessWidget {
   }
 }
 
-// ===== MAP PATH PAINTER (FOR STATIC MAP) =====
+// ===== MAP PATH PAINTER (FOR DYNAMIC TRIP ROUTES) =====
 class _MapPathPainter extends CustomPainter {
+  final List<TripItem> tripItems;
+  final int selectedIndex;
+
+  _MapPathPainter({
+    required this.tripItems,
+    required this.selectedIndex,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw route path
+    if (tripItems.length < 2) return;
+
+    // Path paint
     final pathPaint = Paint()
-      ..color = AppColors.primary
-      ..strokeWidth = 4
+      ..color = AppColors.primary.withValues(alpha: 0.6)
+      ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
-    final path = Path();
-    // Example path from bottom-left to center
-    path.moveTo(size.width * 0.3, size.height * 0.7);
-    path.quadraticBezierTo(
-      size.width * 0.4,
-      size.height * 0.55,
-      size.width * 0.5,
-      size.height * 0.45,
-    );
+    // Calculate screen positions for all items
+    List<Offset> positions = tripItems.map((item) {
+      return _latLngToScreenPosition(item.latitude, item.longitude, tripItems, size);
+    }).toList();
 
-    // Draw dotted line effect
-    _drawDottedPath(canvas, path, pathPaint);
+    // Draw paths between consecutive destinations
+    for (int i = 0; i < positions.length - 1; i++) {
+      final path = Path();
+      path.moveTo(positions[i].dx, positions[i].dy);
+      
+      // Add a slight curve for visual appeal
+      final midX = (positions[i].dx + positions[i + 1].dx) / 2;
+      final midY = (positions[i].dy + positions[i + 1].dy) / 2;
+      final offsetY = (positions[i + 1].dx - positions[i].dx) * 0.1;
+      
+      path.quadraticBezierTo(
+        midX,
+        midY - offsetY,
+        positions[i + 1].dx,
+        positions[i + 1].dy,
+      );
 
-    // Draw markers
-    _drawMarker(
-      canvas,
-      Offset(size.width * 0.3, size.height * 0.7),
-      AppColors.accent,
-      true,
-    );
-    _drawMarker(
-      canvas,
-      Offset(size.width * 0.5, size.height * 0.45),
-      const Color(0xFF1976D2),
-      false,
-    );
-  }
-
-  void _drawDottedPath(Canvas canvas, Path path, Paint paint) {
-    final metric = path.computeMetrics().first;
-    const dashWidth = 10.0;
-    const dashSpace = 8.0;
-    double distance = 0.0;
-
-    while (distance < metric.length) {
-      final start = metric.getTangentForOffset(distance)!.position;
-      distance += dashWidth;
-      final end = metric.getTangentForOffset(distance)!.position;
-      canvas.drawLine(start, end, paint);
-      distance += dashSpace;
+      _drawDottedPath(canvas, path, pathPaint);
     }
   }
 
-  void _drawMarker(Canvas canvas, Offset position, Color color, bool isStart) {
-    // Shadow
-    final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(position + const Offset(0, 2), 12, shadowPaint);
+  Offset _latLngToScreenPosition(
+    double lat,
+    double lng,
+    List<TripItem> allItems,
+    Size screenSize,
+  ) {
+    if (allItems.isEmpty) return Offset(screenSize.width / 2, screenSize.height / 2);
+    
+    // Calculate bounds
+    double minLat = allItems.map((e) => e.latitude).reduce((a, b) => a < b ? a : b);
+    double maxLat = allItems.map((e) => e.latitude).reduce((a, b) => a > b ? a : b);
+    double minLng = allItems.map((e) => e.longitude).reduce((a, b) => a < b ? a : b);
+    double maxLng = allItems.map((e) => e.longitude).reduce((a, b) => a > b ? a : b);
+    
+    // Add padding
+    double latPadding = (maxLat - minLat) * 0.2;
+    double lngPadding = (maxLng - minLng) * 0.2;
+    
+    // Normalize to 0-1 range
+    double dx = (lng - minLng + lngPadding) / (maxLng - minLng + 2 * lngPadding);
+    double dy = 1 - (lat - minLat + latPadding) / (maxLat - minLat + 2 * latPadding);
+    
+    // Convert to screen coordinates with margins
+    double marginTop = 200;
+    double marginBottom = 500;
+    double marginSide = 40;
+    
+    double x = marginSide + dx * (screenSize.width - 2 * marginSide);
+    double y = marginTop + dy * (screenSize.height - marginTop - marginBottom);
+    
+    return Offset(x, y);
+  }
 
-    // Marker circle
-    final markerPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(position, 10, markerPaint);
+  void _drawDottedPath(Canvas canvas, Path path, Paint paint) {
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      const dashWidth = 8.0;
+      const dashSpace = 6.0;
+      double distance = 0.0;
 
-    // Inner white circle
-    final innerPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(position, 4, innerPaint);
+      while (distance < metric.length) {
+        final start = metric.getTangentForOffset(distance)?.position;
+        distance += dashWidth;
+        final end = metric.getTangentForOffset(distance.clamp(0, metric.length))?.position;
+        
+        if (start != null && end != null) {
+          canvas.drawLine(start, end, paint);
+        }
+        distance += dashSpace;
+      }
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MapPathPainter oldDelegate) {
+    return oldDelegate.tripItems != tripItems ||
+           oldDelegate.selectedIndex != selectedIndex;
+  }
 }

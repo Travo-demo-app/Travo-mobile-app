@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 class SlideRightRoute extends PageRouteBuilder {
   final Widget page;
 
-  SlideRightRoute({required this.page})
+  SlideRightRoute({required this.page, RouteSettings? settings})
       : super(
+          settings: settings,
           pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(1.0, 0.0); // Start from right

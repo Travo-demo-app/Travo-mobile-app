@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
 import '../core/widgets/shared_bottom_nav_bar.dart';
+import '../data/adventure_data.dart';
 
-class MyStoriesPage extends StatelessWidget {
+class MyStoriesPage extends StatefulWidget {
   const MyStoriesPage({super.key});
 
   @override
+  State<MyStoriesPage> createState() => _MyStoriesPageState();
+}
+
+class _MyStoriesPageState extends State<MyStoriesPage> {
+
+  @override
   Widget build(BuildContext context) {
+    final allTrips = getAllTrips();
+
     return Scaffold(
       backgroundColor: AppColors.surfaceLight,
       appBar: AppBar(
@@ -25,51 +34,54 @@ class MyStoriesPage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: AppColors.textPrimary),
-            onPressed: () {},
-          ),
-        ],
+        
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: const [
-            _StoryCard(
-              imageUrl:
-                  "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?fit=crop&w=800&h=500",
-              title: "Paris Spring Getaway",
-              startDate: "April 12",
-              endDate: "April 19, 2023",
-            ),
-            SizedBox(height: 16),
-            _StoryCard(
-              imageUrl:
-                  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?fit=crop&w=800&h=500",
-              title: "Tokyo Adventure",
-              startDate: "Nov 05",
-              endDate: "Nov 15, 2022",
-            ),
-            SizedBox(height: 16),
-            _StoryCard(
-              imageUrl:
-                  "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?fit=crop&w=800&h=500",
-              title: "New York City",
-              startDate: "Dec 20",
-              endDate: "Dec 28, 2022",
-            ),
-            SizedBox(height: 16),
-            _StoryCard(
-              imageUrl:
-                  "https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?fit=crop&w=800&h=500",
-              title: "Santorini Summer",
-              startDate: "Aug 01",
-              endDate: "Aug 10, 2022",
-            ),
-            SizedBox(height: 80),
-          ],
-        ),
+        child: allTrips.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.photo_album_outlined,
+                      size: 64,
+                      color: AppColors.textDisabled,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No trips yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Create a trip in Plans to start your story',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textDisabled,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: allTrips.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final trip = allTrips[index];
+                  return _StoryCard(
+                    imageUrl: trip.imageUrl,
+                    title: trip.name,
+                    dates: trip.dates,
+                    duration: trip.duration,
+                    trip: trip,
+                  );
+                },
+              ),
       ),
       bottomNavigationBar: const SharedBottomNavBar(activeRoute: '/story'),
     );
@@ -80,21 +92,23 @@ class MyStoriesPage extends StatelessWidget {
 class _StoryCard extends StatelessWidget {
   final String imageUrl;
   final String title;
-  final String startDate;
-  final String endDate;
+  final String dates;
+  final String duration;
+  final SavedTrip trip;
 
   const _StoryCard({
     required this.imageUrl,
     required this.title,
-    required this.startDate,
-    required this.endDate,
+    required this.dates,
+    required this.duration,
+    required this.trip,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/story-details', arguments: title);
+        Navigator.pushNamed(context, '/story-details', arguments: trip);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -149,8 +163,22 @@ class _StoryCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      "$startDate - $endDate",
-                      style: TextStyle(
+                      dates,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      duration,
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
                       ),

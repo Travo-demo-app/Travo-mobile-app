@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/constants/app_theme.dart';
 import 'core/utils/page_transitions.dart';
+import 'data/adventure_data.dart';
 import 'pages/welcome_page.dart';
 import 'pages/signin_page.dart';
 import 'pages/forgot_password_page.dart';
@@ -16,10 +17,8 @@ import 'pages/story_details_page.dart';
 import 'pages/add_story_details_page.dart';
 import 'pages/recommendations_overlay_page.dart';
 import 'pages/place_details_page.dart';
-import 'pages/transportation_page.dart';
 import 'pages/adventure_page.dart';
 import 'pages/map_page.dart';
-import 'pages/food_dining_page.dart';
 
 void main() {
   runApp(const TravoApp());
@@ -73,8 +72,12 @@ class TravoApp extends StatelessWidget {
             page = const MyStoriesPage();
             break;
           case '/story-details':
-            final tripTitle = settings.arguments as String?;
-            page = StoryDetailsPage(tripTitle: tripTitle ?? 'Trip');
+            final trip = settings.arguments as SavedTrip?;
+            if (trip == null) {
+              page = const MyStoriesPage();
+            } else {
+              page = StoryDetailsPage(trip: trip);
+            }
             break;
           case '/add-story-details':
             final destinationName = settings.arguments as String?;
@@ -84,15 +87,6 @@ class TravoApp extends StatelessWidget {
             break;
           case '/recommendations':
             page = const TravoRecommendationsPage();
-            break;
-          case '/place-details':
-            page = const TravoPlaceDetailsPage();
-            break;
-          case '/transportation':
-            page = const TransportationPage();
-            break;
-          case '/food-dining':
-            page = const FoodDiningPage();
             break;
           case '/adventure':
             page = const TravoAdventurePage();
@@ -104,7 +98,7 @@ class TravoApp extends StatelessWidget {
             page = const WelcomePage();
         }
 
-        return SlideRightRoute(page: page);
+        return SlideRightRoute(page: page, settings: settings);
       },
     );
   }
